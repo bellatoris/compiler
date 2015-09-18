@@ -8,7 +8,7 @@ struct _point
 
 	int color;
 } point[20];
-;;
+
 struct _line
 {
 	struct _point* p[2];

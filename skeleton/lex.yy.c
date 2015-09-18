@@ -862,7 +862,7 @@ YY_RULE_SETUP
 case 11:
 YY_RULE_SETUP
 #line 54 "subc.l"
-{	enter(FLAG(yytext), yytext, yyleng);	}
+{	enter(ID, yytext, yyleng);	}
 	YY_BREAK
 case 12:
 YY_RULE_SETUP

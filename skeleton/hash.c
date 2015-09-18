@@ -23,43 +23,25 @@ id* enter(int flag, char* str, int length)
 
 		temp->count = 0;
 
-		if(flag == ID)
-			temp->count = 1;
-	
 		item.key = temp->name;
 		item.data = temp;
 
-		result = hsearch(item, ENTER);
+		hsearch(item, ENTER);
 
-		if(flag == 1)
-			printf("ID\t%s\t%d\n", (char*)temp->name, temp->count);
+		if(flag == ID)
+			printf("ID\t%s\t%d\t%d\n", (char*)temp->name, ++temp->count, temp->tokentype);
 
 		return temp;
 	}
-	else if(result != NULL && flag == KEY)
+	else
 	{
 		id* temp = result->data;
 		temp->count++;
-		printf("KEY\t%s\t%d\n", (char*)temp->name, temp->count);
+		if(temp->tokentype != flag)
+			printf("KEY\t%s\t%d\t%d\n", (char*)temp->name, temp->count, temp->tokentype);
+		else
+			printf("ID\t%s\t%d\t%d\n", (char*)temp->name, temp->count, temp->tokentype);
+		return temp;
 	}
-
-	else if(result != NULL && flag == ID)
-	{
-		id* temp = result->data;
-		temp->count++;
-		printf("ID\t%s\t%d\n", (char*)temp->name, temp->count);
-	}
-}
-
-int FLAG(char* str)
-{
-	int i;
-	char* keyWord[]={ "auto", "break", "case", "char", "continue", "default", "do", "double", "else", "extern", "float", "for", "goto", "if", "int", "long", "register", "return", "short", "sizeof", "static", "struct", "switch", "typedef", "union", "unsigned", "void", "while", "\0"};
-	for (i = 0; i < 28 ; i++) 
-	{
-		if(strcmp(keyWord[i], str) == 0)
-		return KEY;
-	}
-	return ID;
 }
 

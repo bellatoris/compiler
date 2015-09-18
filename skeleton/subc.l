@@ -51,7 +51,7 @@ Op 			[\(\)\[\]\{\}\-\>\.\,\\\!\~\+\/\%\<\=\&\^\|\;\:\*]
 <normal>{Op}			{	printf("OP\t%s\n", yytext);	}
 <normal>{intconst} 		{	printf("INT\t%s\n", yytext);	}
 <normal>{floatconst}	{	printf("F\t%s\n", yytext);	}
-<normal>{Id}			{	enter(FLAG(yytext), yytext, yyleng);	}
+<normal>{Id}			{	enter(ID, yytext, yyleng);	}
 <normal>\-\>|\.\.|\+\+|\-\-|\<\<|\>\>|\<\=|\>\=|\=\=|\!\=|\&\&|\|\||\+\=|\-\=|\*\=|\/\=|\%\=|\&\=|\^\=|\|\=|\<\<\=|\>\>\=	{	printf("Op\t%s\n", yytext);	}
 <normal>.				{	printf("You insert wrong input\n");	}
 
