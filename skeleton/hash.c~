@@ -1,0 +1,62 @@
+#include "hash.h"
+#include "subc.h"
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+id* enter(int flag, char* str, int length)
+{
+	ENTRY item;
+	ENTRY* result;
+
+	item.key = str;
+	result = hsearch(item,FIND);
+
+	if(result == NULL)
+	{
+		id* temp = (id*)malloc(sizeof(id));
+		temp->tokentype = flag;
+		temp->name = (char*)malloc(sizeof(char));
+
+		int i;
+
+		for(i = 0; i < length; i++)
+			temp->name[i] = str[i];
+
+		temp->count = 0;
+
+		if(flag == 1)
+			temp->count = 1;
+	
+		item.key = temp->name;
+		item.data = temp;
+
+		result = hsearch(item,ENTER);
+
+		temp  = result->data;
+
+		if(flag == 1)
+			printf("ID\t%s\t%d\n", (char*)temp->name, temp->count);
+
+		return temp;
+	}
+	else if(result != NULL && flag == 0)
+	{
+		id* temp = result->data;
+		temp->count++;
+		printf("KEY\t%s\t%d\n", (char*)temp->name, temp->count);
+	}
+
+	else if(result != NULL && flag == 1)
+	{
+		id* temp = result->data;
+		temp->count++;
+		printf("ID\t%s\t%d\n", (char*)temp->name, temp->count);
+	}
+}
+
+int ID(char* str)
+{
+	
+}
+
