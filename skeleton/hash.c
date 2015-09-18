@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
+//asdasdasdas
 id* enter(int flag, char* str, int length)
 {
 	ENTRY item;
