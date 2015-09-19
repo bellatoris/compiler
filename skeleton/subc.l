@@ -42,7 +42,7 @@ Op 			[\(\)\[\]\{\}\-\>\.\,\\\!\~\+\/\%\<\=\&\^\|\;\:\*]
 %%
 
 <comment>\/\*			{	commentdepth++;	}
-<comment>\*\/			{	commentdepth--;	if(commentdepth == 0){BEGIN normal;}	}
+<comment>\*\/			{	commentdepth--;	if(commentdepth == 0) {BEGIN normal;}   }
 <comment>. ;
 <normal>\/\*			{ 	commentdepth++; BEGIN comment;	}
 <normal>{whitespace} ;	

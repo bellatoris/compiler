@@ -797,7 +797,7 @@ YY_RULE_SETUP
 case 2:
 YY_RULE_SETUP
 #line 45 "subc.l"
-{	commentdepth--;	if(commentdepth == 0){BEGIN normal;}	}
+{	commentdepth--;	if(commentdepth == 0) {BEGIN normal;}   }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
@@ -854,7 +854,7 @@ YY_RULE_SETUP
 case 12:
 YY_RULE_SETUP
 #line 55 "subc.l"
-{	printf("Op\t%s\n", yytext);	}
+{	printf("OP\t%s\n", yytext);	}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP

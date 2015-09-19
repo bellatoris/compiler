@@ -13,9 +13,11 @@ id* enter(int flag, char* str, int length)
 	item.key = str;
 	result = hsearch(item,FIND);
 
+    id* temp;
+
 	if(result == NULL)
 	{
-		id* temp = (id*)malloc(sizeof(id));
+		temp = (id*)malloc(sizeof(id));
 		temp->tokentype = flag;
 		temp->name = (char*)malloc(sizeof(char));
 
@@ -35,7 +37,7 @@ id* enter(int flag, char* str, int length)
 	}
 	else
 	{
-		id* temp = result->data;
+		temp = result->data;
 		temp->count++;
 		if(temp->tokentype != flag)
 			printf("KEY\t%s\t%d\t%d\n", (char*)temp->name, temp->count, temp->tokentype);
