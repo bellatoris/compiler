@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-
+#include "hash.h"
 
 typedef struct id {
 	int tokentype;

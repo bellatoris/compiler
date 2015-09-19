@@ -18,10 +18,7 @@
 /* This section will appear at the head of lex.yy.c/lex.yy.cc */
 /**************************************************************/
 
-
 #include "subc.h"
-#include "hash.h"
-
 
 /***************************************************************
 {Other useful code segments can be here.}

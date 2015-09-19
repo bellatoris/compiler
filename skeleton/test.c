@@ -20,3 +20,7 @@ struct _line
 @
 $
 while
+Doogie babo
+
+int char float double if while else  
+<< >> << != == ..  ^ %  // 

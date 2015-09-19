@@ -1,10 +1,9 @@
-#include "hash.h"
 #include "subc.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-//asdasdasdas
+
 id* enter(int flag, char* str, int length)
 {
 	ENTRY item;
@@ -17,7 +16,7 @@ id* enter(int flag, char* str, int length)
 
 	if(result == NULL)
 	{
-		temp = (id*)malloc(sizeof(id));
+		temp = (id*)malloc(sizeof(id)); // allocate 
 		temp->tokentype = flag;
 		temp->name = (char*)malloc(sizeof(char));
 
