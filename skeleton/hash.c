@@ -30,7 +30,7 @@ id* enter(int flag, char* str, int length)
 		hsearch(item, ENTER);
 
 		if(flag == ID)
-			printf("ID\t%s\t%d\t%d\n", (char*)temp->name, ++temp->count, temp->tokentype);
+			printf("ID\t%s\t%d\t\n", (char*)temp->name, ++temp->count);
 
 		return temp;
 	}
@@ -39,9 +39,9 @@ id* enter(int flag, char* str, int length)
 		temp = result->data;
 		temp->count++;
 		if(temp->tokentype != flag)
-			printf("KEY\t%s\t%d\t%d\n", (char*)temp->name, temp->count, temp->tokentype);
+			printf("KEY\t%s\t%d\t\n", (char*)temp->name, temp->count);
 		else
-			printf("ID\t%s\t%d\t%d\n", (char*)temp->name, temp->count, temp->tokentype);
+			printf("ID\t%s\t%d\t\n", (char*)temp->name, temp->count);
 		return temp;
 	}
 }
