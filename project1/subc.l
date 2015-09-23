@@ -50,7 +50,7 @@ Op 			[\(\)\[\]\{\}\-\>\.\,\\\!\~\+\/\%\<\=\&\^\|\;\:\*]
 <normal>{floatconst}	{	printf("F\t%s\n", yytext);	}
 <normal>{Id}			{	enter(ID, yytext, yyleng);	}
 <normal>\-\>|\.\.|\+\+|\-\-|\<\<|\>\>|\<\=|\>\=|\=\=|\!\=|\&\&|\|\||\+\=|\-\=|\*\=|\/\=|\%\=|\&\=|\^\=|\|\=|\<\<\=|\>\>\=	{	printf("OP\t%s\n", yytext);	}
-<normal>.				{	printf("You insert wrong input\n");	}
+<normal>.				{	printf("bad input");	}
 
 %%
 
