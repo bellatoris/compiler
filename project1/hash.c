@@ -29,7 +29,7 @@ id* enter(int flag, char* str, int length)
 
 		hsearch(item, ENTER);       //hashtable에 ENTRY를 넣어준다.
 
-		if(flag == ID)              //Identifier의 경우 처음부터 count = 1을 넣어주고 그값을 출력해준다. KeyWord의 경우 처음에 initHash로 초기화 해주므로 이 단계를 거치면 않는다.
+		if(flag == ID)              //Identifier의 경우 처음부터 count = 1을 넣어주고 그값을 출력해준다. KeyWord의 경우 처음에 initHash로 초기화 해주므로 이 단계를 거치지 않는다.
 			printf("ID\t%s\t%d\t\n", (char*)temp->name, ++temp->count);
 
 		return temp;

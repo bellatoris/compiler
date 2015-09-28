@@ -70,7 +70,7 @@ void initHash()
 
 int main(int argc, char** argv)
 {
-	hcreate(100);
+	hcreate(100);           //hash table을 만든다.
 
 	id* temp;
 
@@ -88,6 +88,6 @@ int main(int argc, char** argv)
 	BEGIN normal;
 	yylex ();
 
-	hdestroy();
+	hdestroy();             //hash table을 파괴한다.
 	return 0;
 }
