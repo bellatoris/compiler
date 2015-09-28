@@ -14,7 +14,7 @@ id* enter(int flag, char* str, int length)
 
     id* temp;
 
-	if(result == NULL)  //스트링이 존재 하지 않을 경우
+	if(result == NULL)  //Key가 일치하는 ENTRY가  존재 하지 않을 경우
 	{
 		temp = (id*)malloc(sizeof(id)); // 새로히 id를 동적할당한다.
 		temp->tokentype = flag;
@@ -25,7 +25,7 @@ id* enter(int flag, char* str, int length)
 		temp->count = 0;    //keyWord에 한해서 count를 0으로 초기화 해준다.
 
 		item.key = temp->name;      //key에 동적할당된 스트링을 다시 넣어준다.
-		item.data = temp;           //ENTRY의 data에는 id를 넣어준다.
+		item.data = temp;           //ENTRY의 data에는 동적할당된 id를 넣어준다.
 
 		hsearch(item, ENTER);       //hashtable에 ENTRY를 넣어준다.
 
