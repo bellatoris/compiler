@@ -26,30 +26,30 @@
 int commentdepth = 0;
 %}
 
-letter		[A-Za-z_]
-alnum		[A-Za-z0-9_]
-digit 		[0-9]
-whitespace 	[ \t\n]
-intconst	([1-9]+{digit}*)|0
-floatconst	{digit}+\.{digit}*([eE][+-]?{digit}+)?
-Id			{letter}({letter}|{digit})*
-Op 			[\(\)\[\]\{\}\-\>\.\,\\\!\~\+\/\%\<\=\&\^\|\;\:\*]
+letter		    [A-Za-z_]
+alnum		    [A-Za-z0-9_]
+digit 		    [0-9]
+whitespace  	[ \t\n]
+integer_const	([1-9]+{digit}*)|0
+float_const	    {digit}+\.{digit}*([eE][+-]?{digit}+)?
+Id			    {letter}({letter}|{digit})*
+Op 			    [\(\)\[\]\{\}\-\>\.\,\\\!\~\+\/\%\<\=\&\^\|\;\:\*]
 %start normal comment
 
 %%
 
-<comment>\/\*			{	commentdepth++;	}
-<comment>\*\/			{	commentdepth--;	if(commentdepth == 0) {BEGIN normal;}   }
+<comment>\/\*			        {	commentdepth++;	}
+<comment>\*\/			        {	if(--commentdepth == 0) {BEGIN normal;}   }
 <comment>. ;
-<normal>\/\*			{ 	commentdepth++; BEGIN comment;	}
+<normal>\/\*			        { 	commentdepth++; BEGIN comment;	}
 <normal>{whitespace} ;	
-<normal>{intconst}/\.\.	{	printf("INT\t%s\n", yytext);	}	
-<normal>\.\./{intconst}	{	printf("OP\t%s\n", yytext);	}
-<normal>{Op}			{	printf("OP\t%s\n", yytext);	}
-<normal>{intconst} 		{	printf("INT\t%s\n", yytext);	}
-<normal>{floatconst}	{	printf("F\t%s\n", yytext);	}
-<normal>{Id}			{	enter(ID, yytext, yyleng);	}
+<normal>{integer_const} 		{	printf("INT\t%s\n", yytext);	}
+<normal>{float_const}	        {	printf("F\t%s\n", yytext);	}
+<normal>{Id}			        {	enter(ID, yytext, yyleng);	}
+<normal>{Op}                    {   printf("Op\t%s\n", yytext); }
 <normal>\-\>|\.\.|\+\+|\-\-|\<\<|\>\>|\<\=|\>\=|\=\=|\!\=|\&\&|\|\||\+\=|\-\=|\*\=|\/\=|\%\=|\&\=|\^\=|\|\=|\<\<\=|\>\>\=	{	printf("OP\t%s\n", yytext);	}
+<normal>{integer_const}/\.\.	{	printf("INT\t%s\n", yytext);    }	
+<normal>\.\./{integer_const}	{	printf("OP\t%s\n", yytext);	}
 <normal>. ;
 
 %%
@@ -70,7 +70,7 @@ void initHash()
 
 int main(int argc, char** argv)
 {
-	hcreate(100);           //hash table을 만든다.
+	hcreate(1000);           //hash table을 만든다.
 
 	id* temp;
 
