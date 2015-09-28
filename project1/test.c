@@ -2,6 +2,7 @@
 	/* nested comments */
 ***********************************/
 
+
 struct _point
 {
 	float x, y, z;
@@ -17,10 +18,4 @@ struct _line
 }line[20];
 
 1..50
-@
-$
-while
-Doogie babo
 
-int char float double if while else  
-<< >> << != == ..  ^ %  // 

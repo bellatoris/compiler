@@ -14,7 +14,7 @@ id* enter(int flag, char* str, int length)
 
     id* temp;
 
-	if(result == NULL)  //Key가 일치하는 ENTRY가  존재 하지 않을 경우
+	if(result == NULL)              //Key가 일치하는 ENTRY가  존재 하지 않을 경우
 	{
 		temp = (id*)malloc(sizeof(id)); // 새로히 id를 동적할당한다.
 		temp->tokentype = flag;
@@ -22,7 +22,7 @@ id* enter(int flag, char* str, int length)
 
 		strcpy(temp->name, str);    //스트링을 복사해준다.
 
-		temp->count = 0;    //keyWord에 한해서 count를 0으로 초기화 해준다.
+		temp->count = 0;            //keyWord에 한해서 count를 0으로 초기화 해준다.
 
 		item.key = temp->name;      //key에 동적할당된 스트링을 다시 넣어준다.
 		item.data = temp;           //ENTRY의 data에는 동적할당된 id를 넣어준다.
@@ -34,10 +34,10 @@ id* enter(int flag, char* str, int length)
 
 		return temp;
 	}
-	else        //ENTRY가 존재하는경우
+	else                            //ENTRY가 존재하는경우
 	{
-		temp = result->data;    //temp에 찾은 id값을 넣어준다.
-		temp->count++;          //initHash를 한 이후에 적용되는 함수이므로 count를 올려준다.
+		temp = result->data;        //temp에 찾은 id값을 넣어준다.
+		temp->count++;              //initHash를 한 이후에 적용되는 함수이므로 count를 올려준다.
 		if(temp->tokentype != flag)
 			printf("KEY\t%s\t%d\t\n", (char*)temp->name, temp->count);
 		else
