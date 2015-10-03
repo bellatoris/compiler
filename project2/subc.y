@@ -29,8 +29,8 @@ void    REDUCE(char* s);
 %left   RELOP
 %left   '+' '-'
 %left   '*' '/' '%'
-%left   '[' ']' '(' ')'
-%right  '!' PLUS_PLUS MINUS_MINUS UNARY
+%left   '[' ']' '(' ')' 
+%right  '!' PLUS_PLUS MINUS_MINUS
 %left 	STRUCTOP
 %left   IF
 %left   ELSE
@@ -345,7 +345,7 @@ unary: '(' expr ')' {
  		| STRING {
             REDUCE("unary->STRING");
         }
-		| '-' unary %prec UNARY {
+		| '-' unary %prec '!' {
             REDUCE("unary->'-' unary");
         }
 		| '!' unary {
@@ -357,10 +357,10 @@ unary: '(' expr ')' {
 		| unary MINUS_MINUS {
             REDUCE("unary->unary MINUS_MINUS");
         }
-		| '&' unary %prec UNARY {
+		| '&' unary %prec '!' {
             REDUCE("unary->'&' unary");
         }
-		| '*' unary %prec UNARY {
+		| '*' unary %prec '!' {
             REDUCE("unary->'*' unary");
         }
 		| unary '[' expr ']' {

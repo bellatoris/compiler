@@ -2,6 +2,10 @@ int main()
 {
     int i;
     int j;
+    int* k;
+    k = &j;
+    *k[1] = 3;/*
+
     for(j = 0; j < 3; j++)
     {
         i = j;
@@ -10,7 +14,7 @@ int main()
     if(i==3)
     {
         i = 4;
-    }
+    
     
     if(j==3)
     {
@@ -20,5 +24,12 @@ int main()
     {
         i = 3;
     }
+
+    }
+
+    else
+    {
+        i = 4;
+    }*/
 
 }
