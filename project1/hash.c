@@ -18,9 +18,9 @@ id* enter(int flag, char* str, int length)
 	{
 		temp = (id*)malloc(sizeof(id)); // 새로히 id를 동적할당한다.
 		temp->tokentype = flag;
-		temp->name = (char*)malloc(sizeof(char)); //스트링도 다시 동적할당 해준다. yytext는 사라지기 때문
+		temp->name = (char*)malloc(sizeof(char)*(length+1)); //스트링도 다시 동적할당 해준다. yytext는 사라지기 때문
 
-		strcpy(temp->name, str);    //스트링을 복사해준다.
+		strncpy(temp->name, str, length);    //스트링을 복사해준다.
 
 		temp->count = 0;            //keyWord에 한해서 count를 0으로 초기화 해준다.
 

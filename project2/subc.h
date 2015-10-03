@@ -8,18 +8,19 @@
 #define __SUBC_H__
 
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
+#include <search.h>
+#include <stdlib.h>
 
 /* structure for ID */
-struct id {
+typedef struct id {
       char *name;
       int lextype;
-};
+}id;
 
 /* For hash table */
-unsigned hash(char *name);
-struct id *enter(int lextype, char *name, int length);
-struct id *lookup(char *name);
+
+id* enter(int lextype, char *name, int length);
 
 int read_line();
 

@@ -7,24 +7,35 @@
 
 #include "subc.h"
 
-#define  HASH_TABLE_SIZE   101
 
-struct nlist {
-   struct nlist *next;
-   struct id *data;
-};
+id* enter(int lextype, char* str, int length)
+{
+	ENTRY item;                   
+	ENTRY* result;
 
-static struct nlist *hashTable[HASH_TABLE_SIZE];
+	item.key = str;                
+	result = hsearch(item, FIND);   
 
-unsigned hash(char *name) {
-   /* implementation is given here */
+    id* temp;
+
+	if(result == NULL)             
+	{
+		temp = (id*)malloc(sizeof(id)); 
+		temp->lextype = lextype;
+		temp->name = (char*)malloc(sizeof(char)*(length+1)); 
+
+		strncpy(temp->name, str, length);           
+
+		item.key = temp->name;     
+		item.data = temp;           
+
+		hsearch(item, ENTER);    
+
+		return temp;
+	}
+	else                            
+	{
+		temp = result->data;
+		return temp;
+	}
 }
-
-struct id *enter(int lextype, char *name, int length) {
-   /* implementation is given here */
-}
-
-struct id *lookup(char *name) {
-   /* implementation is given here */
-}
-
