@@ -29,8 +29,11 @@ void    REDUCE(char* s);
 %left   RELOP
 %left   '+' '-'
 %left   '*' '/' '%'
-%right  '!' PLUS_PLUS MINUS_MINUS
+%left   '[' ']' '(' ')'
+%right  '!' PLUS_PLUS MINUS_MINUS UNARY
 %left 	STRUCTOP
+%left   IF
+%left   ELSE
 
 /* Token and Types */
 %token 				TYPE STRUCT
@@ -222,10 +225,10 @@ stmt: expr ';' {
 		| ';' {
             REDUCE("stmt->';'");
         }
-		| IF '(' test ')' stmt {
+		| IF '(' test ')' stmt %prec IF {
             REDUCE("stmt->IF '(' test ')' stmt");
         }
-		| IF '(' test ')' stmt ELSE stmt {
+		| IF '(' test ')' stmt ELSE stmt %prec ELSE {
             REDUCE("stmt->IF '(' test ')' stmt ELSE stmt");
         }
 		| WHILE '(' test ')' stmt {
@@ -342,7 +345,7 @@ unary: '(' expr ')' {
  		| STRING {
             REDUCE("unary->STRING");
         }
-		| '-' unary {
+		| '-' unary %prec UNARY {
             REDUCE("unary->'-' unary");
         }
 		| '!' unary {
@@ -354,10 +357,10 @@ unary: '(' expr ')' {
 		| unary MINUS_MINUS {
             REDUCE("unary->unary MINUS_MINUS");
         }
-		| '&' unary {
+		| '&' unary %prec UNARY {
             REDUCE("unary->'&' unary");
         }
-		| '*' unary {
+		| '*' unary %prec UNARY {
             REDUCE("unary->'*' unary");
         }
 		| unary '[' expr ']' {

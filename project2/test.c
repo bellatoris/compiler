@@ -6,10 +6,6 @@ int main(){
 	a = 10;
 	b = 5;
 
-    a++;
-
-    b++;
-
 	if ( a == 10 || b == 5 ){
 		return 1;
 	} else {
