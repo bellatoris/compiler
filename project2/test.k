@@ -4,7 +4,8 @@ int main()
     int j;
     int* k;
     k = &j;
-    *k[1] = 3;/*
+    *k[1] = 3;
+
 
     for(j = 0; j < 3; j++)
     {
@@ -14,22 +15,17 @@ int main()
     if(i==3)
     {
         i = 4;
-    
+    }
     
     if(j==3)
     {
         j = 4;
     }
-    else
-    {
-        i = 3;
-    }
-
-    }
+   
 
     else
     {
         i = 4;
-    }*/
+    }
 
 }

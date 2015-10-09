@@ -18,7 +18,7 @@ id		{letter}({letter}|{digit})*
 integer_const	([1-9]{digit}*)|"0"
 white_space		[ \t]+
 special_char	\\[nt]
-Operators 	    [\(\)\[\]\{\}\-\,\\\!\~\+\/\%\=\&\^\|\;\:\*]
+Operators 	    [\(\)\[\]\{\}\-\,\\\!\~\+\/\%\=\&\^\|\;\:\*\?]
 
 
 %x COMMENT
@@ -51,12 +51,52 @@ Operators 	    [\(\)\[\]\{\}\-\,\\\!\~\+\/\%\=\&\^\|\;\:\*]
            return yytext[0]; 
         }
 
-"+="|"-="|"*="|"/="|"%="|"||"|"&&"|"<"|"<="|">"|">="|"=="|"!="|"++"|"--"|"."	{
+"+="|"-="|"*="|"/="|"%=" {
+           yylval.stringVal = yytext;
+	       return ASSIGNOP;
+        }
+
+"||" {
+		   yylval.stringVal = yytext;
+	       return LOGICAL_OR;
+        }
+
+"&&" {
+		   yylval.stringVal = yytext;
+	       return LOGICAL_AND;
+        }
+"<"|"<="|">"|">=" {
+		   yylval.stringVal = yytext;
+           return RELOP;
+        }   
+
+"=="|"!=" {
+		   yylval.stringVal = yytext;
+           return EQUOP;
+        }
+
+"++" {
+		   yylval.stringVal = yytext;
+    	   return PLUS_PLUS;	
+        }
+
+"--" {
+		   yylval.stringVal = yytext;
+       	   return MINUS_MINUS;
+        }
+
+"." { 
+		   yylval.stringVal = yytext;
+	       return STRUCTOP;
+        }   
+
+    /*	{
            struct id *entered  = enter(ID, yytext, yyleng);
 		   yylval.stringVal = entered->name;
            //printf("%s\t", yytext);
 		   return entered->lextype;
         }
+    */
 
 {white_space}
 <*>\n		   ++lineno;
@@ -78,8 +118,8 @@ int read_line()
 int main(int argc, char* argv[])
 {
     hcreate(1000);
-   static char *keyword[] = { "int", "char", "struct", "return", "if", "else", "while", "for", "break", "continue", "+=", "-=", "*=", "/=", "%=", "||", "&&", "<", "<=", ">", ">=", "==", "!=", "++", "--", ".", NULL };
-   static int tokentype[] = { TYPE, TYPE, STRUCT, RETURN, IF, ELSE, WHILE, FOR, BREAK, CONTINUE, ASSIGNOP, ASSIGNOP, ASSIGNOP, ASSIGNOP, ASSIGNOP, LOGICAL_OR, LOGICAL_AND, RELOP, RELOP, RELOP,RELOP, EQUOP, EQUOP, PLUS_PLUS, MINUS_MINUS, STRUCTOP, 0 };
+   static char *keyword[] = { "int", "char", "struct", "return", "if", "else", "while", "for", "break", "continue", NULL };
+   static int tokentype[] = { TYPE, TYPE, STRUCT, RETURN, IF, ELSE, WHILE, FOR, BREAK, CONTINUE, 0 };
    int i;
    for(i = 0; keyword[i] != NULL; i++)
       enter(tokentype[i], keyword[i], strlen(keyword[i]));

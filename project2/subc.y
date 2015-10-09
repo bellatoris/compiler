@@ -19,6 +19,7 @@ void    REDUCE(char* s);
 }
 
 /* Precedences and Associativities */
+
 %left	','
 %left   ASSIGNOP '='
 %left   LOGICAL_OR
@@ -29,11 +30,9 @@ void    REDUCE(char* s);
 %left   RELOP
 %left   '+' '-'
 %left   '*' '/' '%'
-%left   '[' ']' '(' ')' 
-%right  '!' PLUS_PLUS MINUS_MINUS
+%left   '[' ']' '(' ')'
+%right  '!' PLUS_PLUS MINUS_MINUS UNARY
 %left 	STRUCTOP
-%left   IF
-%left   ELSE
 
 /* Token and Types */
 %token 				TYPE STRUCT
@@ -96,7 +95,6 @@ opt_specifier: type_specifier {
         }
 		| /* empty */   {
             REDUCE("opt_specifier->epsilon");
-            /* When the type specifier is omitted, the default type is 'int' */
         }
    ;
 
@@ -113,7 +111,6 @@ struct_specifier: STRUCT opt_tag '{' def_list '}' {
         }
 		| STRUCT ID {
             REDUCE("struct_specifier->STRUCT ID");
-            /* In the second case, the struct must have been defined before */
         }
    ;
 
@@ -122,7 +119,6 @@ opt_tag: ID {
         }
 		| /* empty */   {
             REDUCE("opt_tag->epsilon");
-            /* In the second case, the struct becomes anonymus */
         }
    ;
 
@@ -137,7 +133,6 @@ var_decl: ID {
         }
 		| '*' ID {
             REDUCE("var_decl->'*' ID");
-            /* ID[] is the same as *ID. (pointer type) */
         }
    ;
 
@@ -146,7 +141,6 @@ funct_decl:	ID '(' ')' {
         }
 		| ID '(' var_list ')' {
             REDUCE("funct_decl->ID '(' var_list ')'");
-            /* When we declare a function with ID(), we want to have a function which has no parameter. */
         }
    ;
 
@@ -225,10 +219,10 @@ stmt: expr ';' {
 		| ';' {
             REDUCE("stmt->';'");
         }
-		| IF '(' test ')' stmt %prec IF {
+		| IF '(' test ')' stmt {
             REDUCE("stmt->IF '(' test ')' stmt");
         }
-		| IF '(' test ')' stmt ELSE stmt %prec ELSE {
+		| IF '(' test ')' stmt ELSE stmt {
             REDUCE("stmt->IF '(' test ')' stmt ELSE stmt");
         }
 		| WHILE '(' test ')' stmt {
@@ -345,7 +339,7 @@ unary: '(' expr ')' {
  		| STRING {
             REDUCE("unary->STRING");
         }
-		| '-' unary %prec '!' {
+		| '-' unary {
             REDUCE("unary->'-' unary");
         }
 		| '!' unary {
@@ -357,14 +351,16 @@ unary: '(' expr ')' {
 		| unary MINUS_MINUS {
             REDUCE("unary->unary MINUS_MINUS");
         }
-		| '&' unary %prec '!' {
+		| '&' unary {
             REDUCE("unary->'&' unary");
         }
-		| '*' unary %prec '!' {
+		| '*' unary %prec UNARY {
             REDUCE("unary->'*' unary");
+            printf("* first ***************************************************************************************************** \n");
         }
 		| unary '[' expr ']' {
             REDUCE("unary->unary '[' expr ']'");
+            printf("[] first ***************************************************************************************************** \n");
         }
 		| unary STRUCTOP ID {
             REDUCE("unary->unary STRUCTOP ID");
