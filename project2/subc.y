@@ -20,6 +20,8 @@ void    REDUCE(char* s);
 
 /* Precedences and Associativities */
 
+
+%right  ELSE
 %left	','
 %left   ASSIGNOP '='
 %left   LOGICAL_OR
@@ -30,8 +32,9 @@ void    REDUCE(char* s);
 %left   RELOP
 %left   '+' '-'
 %left   '*' '/' '%'
-%left   '[' ']' '(' ')'
-%right  '!' PLUS_PLUS MINUS_MINUS UNARY
+%right  '!' PLUS_PLUS MINUS_MINUS
+%nonassoc UNARY
+%right  '[' '('
 %left 	STRUCTOP
 
 /* Token and Types */
@@ -219,10 +222,10 @@ stmt: expr ';' {
 		| ';' {
             REDUCE("stmt->';'");
         }
-		| IF '(' test ')' stmt {
+		| IF '(' test ')' stmt %prec ELSE {
             REDUCE("stmt->IF '(' test ')' stmt");
         }
-		| IF '(' test ')' stmt ELSE stmt {
+		| IF '(' test ')' stmt ELSE stmt %prec ELSE {
             REDUCE("stmt->IF '(' test ')' stmt ELSE stmt");
         }
 		| WHILE '(' test ')' stmt {
@@ -339,7 +342,7 @@ unary: '(' expr ')' {
  		| STRING {
             REDUCE("unary->STRING");
         }
-		| '-' unary {
+		| '-' unary %prec UNARY {
             REDUCE("unary->'-' unary");
         }
 		| '!' unary {
@@ -351,16 +354,16 @@ unary: '(' expr ')' {
 		| unary MINUS_MINUS {
             REDUCE("unary->unary MINUS_MINUS");
         }
-		| '&' unary {
+		| '&' unary %prec UNARY {
             REDUCE("unary->'&' unary");
         }
 		| '*' unary %prec UNARY {
             REDUCE("unary->'*' unary");
-            printf("* first ***************************************************************************************************** \n");
+        //    printf("* first ***************************************************************************************************** \n");
         }
 		| unary '[' expr ']' {
             REDUCE("unary->unary '[' expr ']'");
-            printf("[] first ***************************************************************************************************** \n");
+          /*  printf("[] first ***************************************************************************************************** \n");*/
         }
 		| unary STRUCTOP ID {
             REDUCE("unary->unary STRUCTOP ID");
@@ -371,6 +374,7 @@ unary: '(' expr ')' {
 		| unary '(' ')' {
             REDUCE("unary->unary '(' ')'");
         }
+
    ;
 
 args: expr {
