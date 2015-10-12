@@ -20,7 +20,6 @@ void    REDUCE(char* s);
 
 /* Precedences and Associativities */
 
-
 %right  ELSE
 %left	','
 %left   ASSIGNOP '='
@@ -32,9 +31,8 @@ void    REDUCE(char* s);
 %left   RELOP
 %left   '+' '-'
 %left   '*' '/' '%'
-%right  '!' PLUS_PLUS MINUS_MINUS
-%nonassoc UNARY
-%right  '[' '('
+%right  '!' PLUS_PLUS MINUS_MINUS UNARY
+%left   '[' '('
 %left 	STRUCTOP
 
 /* Token and Types */
@@ -70,10 +68,10 @@ ext_def_list: ext_def_list ext_def	{
    ;
 
 ext_def: opt_specifier ext_decl_list ';' {
-            REDUCE("exp_def->opt_specifier ext_decl_list ';'");
+            REDUCE("ext_def->opt_specifier ext_decl_list ';'");
         }
 		| opt_specifier funct_decl compound_stmt {
-            REDUCE("exp_def->opt_specifier funct_decl compound_stmt");
+            REDUCE("ext_def->opt_specifier funct_decl compound_stmt");
         }
    ;
 
