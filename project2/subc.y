@@ -32,7 +32,7 @@ void    REDUCE(char* s);
 %left   '+' '-'
 %left   '*' '/' '%'
 %right  '!' PLUS_PLUS MINUS_MINUS UNARY
-%left   '[' '('
+%right   '[' '('
 %left 	STRUCTOP
 
 /* Token and Types */
