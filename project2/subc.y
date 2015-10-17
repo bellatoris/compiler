@@ -22,7 +22,7 @@ void    REDUCE(char* s);
 
 %right  ELSE
 %left	','
-%left   ASSIGNOP '='
+%right   ASSIGNOP '='
 %left   LOGICAL_OR
 %left   LOGICAL_AND
 %left   '|'
@@ -356,12 +356,10 @@ unary: '(' expr ')' {
             REDUCE("unary->'&' unary");
         }
 		| '*' unary %prec UNARY {
-            REDUCE("unary->'*' unary");
-        //    printf("* first ***************************************************************************************************** \n");
+            REDUCE("unary->'*' unary");       
         }
 		| unary '[' expr ']' {
             REDUCE("unary->unary '[' expr ']'");
-          /*  printf("[] first ***************************************************************************************************** \n");*/
         }
 		| unary STRUCTOP ID {
             REDUCE("unary->unary STRUCTOP ID");

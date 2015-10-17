@@ -90,14 +90,6 @@ Operators 	    [\(\)\[\]\{\}\-\,\\\!\~\+\/\%\=\&\^\|\;\:\*\?]
 	       return STRUCTOP;
         }   
 
-    /*	{
-           struct id *entered  = enter(ID, yytext, yyleng);
-		   yylval.stringVal = entered->name;
-           //printf("%s\t", yytext);
-		   return entered->lextype;
-        }
-    */
-
 {white_space}
 <*>\n		   ++lineno;
 <INITIAL,COMMENT>"/*"	{
