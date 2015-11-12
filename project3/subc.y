@@ -14,7 +14,7 @@ void    REDUCE(char* s);
 
 /* yylval types */
 %union {
-	int	intVal;
+	int		intVal;
 	char	*stringVal;
 }
 
@@ -36,12 +36,12 @@ void    REDUCE(char* s);
 %left 	STRUCTOP
 
 /* Token and Types */
-%token 		    TYPE STRUCT
-%token<stringVal>   ID CHAR_CONST STRING STRUCTOP
-%token<intVal>	    INTEGER_CONST
-%token		    RETURN
+%token 				TYPE STRUCT
+%token<stringVal>	ID CHAR_CONST STRING STRUCTOP
+%token<intVal>		INTEGER_CONST
+%token			    RETURN
 %token              IF
-%token		    ELSE
+%token			    ELSE
 %token              WHILE
 %token              FOR
 %token              BREAK

@@ -32,7 +32,7 @@ whitespace  	[ \t\n]
 integer_const	([1-9]+{digit}*)|0
 float_const	    {digit}+\.{digit}*([eE][+-]?{digit}+)?
 Identifier      {letter}({letter}|{digit})*
-Operators 	    [\(\)\[\]\{\}\-\>\.\,\\\!\~\+\/\%\<\=\&\^\|\;\:\*]
+Operators 	    [\(\)\[\]\{\}\-\>\.\,\\\!\~\+\/\%\<\=\&\^\|\;\:\*\?]
 %start normal comment
 
 %%
