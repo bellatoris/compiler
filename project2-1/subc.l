@@ -24,10 +24,10 @@ Operators 	    [\(\)\[\]\{\}\-\,\!\+\/\%\=\&\|\;\*]
 %x COMMENT
 %%
 {id}	{
-		   yylval.idptr = enter(ID, yytext, yyleng);
-	    //	   yylval.stringVal = yylval.idptr->name;
-	    //printf("%s\t", yytext);
-		   return yylval.idptr->lextype;
+		   struct id *entered  = enter(ID, yytext, yyleng);
+		   yylval.stringVal = entered->name;
+           //printf("%s\t", yytext);
+		   return entered->lextype;
 		}
 {integer_const}	{
 		   yylval.intVal = atoi(yytext);
@@ -51,10 +51,10 @@ Operators 	    [\(\)\[\]\{\}\-\,\!\+\/\%\=\&\|\;\*]
            return yytext[0]; 
         }
 
-    /*"+="|"-="|"*="|"/="|"%=" {
+"+="|"-="|"*="|"/="|"%=" {
            yylval.stringVal = yytext;
 	       return ASSIGNOP;
-        }*/
+        }
 
 "||" {
 		   yylval.stringVal = yytext;
@@ -77,17 +77,17 @@ Operators 	    [\(\)\[\]\{\}\-\,\!\+\/\%\=\&\|\;\*]
 
 "++" {
 		   yylval.stringVal = yytext;
-    	   return INCOP;	
+    	   return PLUS_PLUS;	
         }
 
 "--" {
 		   yylval.stringVal = yytext;
-       	   return DECOP;
+       	   return MINUS_MINUS;
         }
 
-"->" { 
+"." { 
 		   yylval.stringVal = yytext;
-	    return STRUCTOP;
+	       return STRUCTOP;
         }   
 
 {white_space}
@@ -106,44 +106,25 @@ int read_line()
 {
    return lineno;
 }
-
-void init_type()
-{
-    struct decl *inttype = maketypedecl(Hash("int"));
-    struct decl *chartype = maketypedecl(Hash("char"));
-    struct decl *voidtype = maketypedecl(VOID);
-
-    declare(enter(TYPE, "int", 3), inttype);
-    declare(enter(TYPE, "char", 4), chartype);
-    declare(enter(VOID, "void", 4), voidtype);
-}
-
+   
 int main(int argc, char* argv[])
 {
-    hcreate(10000);
-/*    struct ScopeStack *SStack = (struct ScopeStack*)malloc(sizeof(struct ScopeStack));
-   */ 
-    SStack.TOP = (struct ScopeNode*)malloc(sizeof(struct ScopeNode));
-    SStack.TOP->prev = NULL;
-    SStack.TOP->top = NULL;
-    
-    static char *keyword[] = { "int", "char", "void", "struct", "return", "if", "else", "while", "for", "break", "continue", NULL };
-   static int tokentype[] = { TYPE, TYPE, VOID, STRUCT, RETURN, IF, ELSE, WHILE, FOR, BREAK, CONTINUE, 0 };
-    int i;
-    for(i = 0; keyword[i] != NULL; i++)
-	enter(tokentype[i], keyword[i], strlen(keyword[i]));
+    hcreate(1000);
+   static char *keyword[] = { "int", "char", "struct", "return", "if", "else", "while", "for", "break", "continue", NULL };
+   static int tokentype[] = { TYPE, TYPE, STRUCT, RETURN, IF, ELSE, WHILE, FOR, BREAK, CONTINUE, 0 };
+   int i;
+   for(i = 0; keyword[i] != NULL; i++)
+      enter(tokentype[i], keyword[i], strlen(keyword[i]));
 
-    init_type();
-
-    if(argc >= 2) yyin = fopen(argv[1], "r");
-	else yyin = stdin;
-    if(!yyin) {
-	printf("Can't open input stream!\n");
-        exit(1);
-    }
+   if(argc >= 2) yyin = fopen(argv[1], "r");
+   else yyin = stdin;
+   if(!yyin) {
+      printf("Can't open input stream!\n");
+      exit(1);
+   }
 	
-    yyparse();
-    fclose(yyin);
-    hdestroy();
-    return 0;
+   yyparse();
+   fclose(yyin);
+   hdestroy();
+   return 0;
 }

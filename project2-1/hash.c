@@ -16,7 +16,7 @@ id* enter(int lextype, char* str, int length)
 	item.key = str;                
 	result = hsearch(item, FIND);   
 
-        id* temp;
+    id* temp;
 
 	if(result == NULL)             
 	{

@@ -24,11 +24,25 @@ struct ste{
     struct ste	*prev;
 }ste;
 
+struct ScopeNode{
+    struct ste *top;
+    struct ScopeNode *prev;
+}ScopeNode;
+
+struct ScopeStack{
+    struct ScopeNode *TOP;
+}ScopeStack;
+
+struct ste *push_scope();
+struct ste *pop_scope();
+struct decl *insert(id *entry, struct decl *declptr);
+void lookup();
+
 struct decl{
     int		    declclass;  /* DECL Class: VAR, CONST, FUNC, TYPE	*/
     struct decl	    *type;  	/* VAR, CONST: pointer to its type decl	*/
     int		    value;	/* CONST: value of integer const	*/
-    float	    real_value;	/* CONST: value of float const		*/
+//    float	    real_value;	/* CONST: value of float const		*/
     struct ste	    *formals;	/* FUNC: ptr to formals list		*/
     struct decl	    *returntype;/* FUNC: ptr to return TYPE decl	*/
     int		    typeclass;	/* TYPE: type class: int, array, ptr	*/
@@ -43,8 +57,24 @@ struct decl{
 /* For hash table */
 
 id* enter(int lextype, char *name, int length);
-
 int read_line();
+struct decl *maketypedecl(int lextype);
+struct decl *makearraydecl(int numidx, struct decl *declptr);
+struct decl *findcurrentdecl(struct id* entry);
+struct decl *makevardecl(struct decl *declptr);
+struct decl *makeconstdecl(struct decl *declptr);
+struct decl *declare(id* entry, struct decl *declptr);
+struct decl *makeptrdecl(struct decl *declptr);
+struct decl *makestructdecl(struct ste *steptr);
+struct decl *makeprocdecl();
+struct decl *makenumconstdecl(struct decl* declptr, int intconst);
+struct decl *structaccess();
+void check_is_struct_type(struct decl *declptr);
+void check_is_type(struct decl *declptr);
+void add_type_to_var(struct decl *declptr1, struct decl *declptr2);
 
+struct ScopeStack SStack;
+
+unsigned int Hash(const char *key);
 #endif
 
