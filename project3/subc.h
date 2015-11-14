@@ -34,8 +34,9 @@ struct ScopeStack{
 }ScopeStack;
 
 struct ste *push_scope();
+struct ste *push_ste_list(struct ste *formals);
 struct ste *pop_scope();
-struct decl *insert(id *entry, struct decl *declptr);
+struct ste *insert(id *entry, struct decl *declptr);
 void lookup();
 
 struct decl{
@@ -58,23 +59,59 @@ struct decl{
 
 id* enter(int lextype, char *name, int length);
 int read_line();
-struct decl *maketypedecl(int lextype);
-struct decl *makearraydecl(int numidx, struct decl *declptr);
-struct decl *findcurrentdecl(struct id* entry);
-struct decl *makevardecl(struct decl *declptr);
-struct decl *makeconstdecl(struct decl *declptr);
-struct decl *declare(id* entry, struct decl *declptr);
-struct decl *makeptrdecl(struct decl *declptr);
-struct decl *makestructdecl(struct ste *steptr);
-struct decl *makeprocdecl();
-struct decl *makenumconstdecl(struct decl* declptr, int intconst);
-struct decl *structaccess();
-void check_is_struct_type(struct decl *declptr);
-void check_is_type(struct decl *declptr);
+
+struct ste   *declare(id* entry, struct decl *declptr);
+
+struct decl  *maketypedecl(int lextype);
+struct decl  *makevardecl(struct decl *typeptr);
+struct decl  *makeptrdecl(struct decl *typeptr);
+struct decl  *makearraydecl(int numidx, struct decl *varptr);
+struct decl  *makestructdecl(struct ste *fieldptr);
+struct decl  *makeconstdecl(struct decl *typeptr);
+struct decl  *makenumconstdecl(struct decl *typeptr, int intconst);
+struct decl  *makeprocdecl();
+
+
+struct decl  *finddecl(struct id* entry);   // entry를 가진 ste가 전체 stack scope에 있는지 확인 한다.해당하는 id가 존재하는지 확인 하려는 목적이다.
+struct decl  *findstructdecl(struct id* entry);	// entry를 가진 ste가 struct scope에 있는지 확인 한다. 해당하는 struct가 존재하는지 확인 하려는 목적이다.
+struct decl  *findcurrentdecl(struct id *fieldid, struct ste *fieldlist);
+
+
+struct decl  *structaccess(struct decl *structptr, struct id *fieldid);
+struct decl  *structPtraccess(struct decl *structptr, struct id *fiedlid);
+struct decl  *arrayaccess(struct decl *arrayptr, struct decl *indexptr);
+
+
+struct decl  *plustype(struct decl *type1, struct decl *type2);
+struct decl  *minustype(struct decl *type1, struct decl *type2);
+struct decl  *reloptype(struct decl *type1, struct decl *type2);
+struct decl  *equoptype(struct decl *type1, struct decl *type2);
+
+
+struct decl *check_is_var_type(struct decl *declptr);
+struct decl *check_compatible(struct decl *declptr1, struct decl *declptr2);
+struct decl *check_compatible_type(struct decl *type1, struct decl *type2);
+struct decl *check_is_struct_type(struct decl *structptr);
+struct decl *check_is_array_type(struct decl *arrayptr);
+struct decl *check_same_type(struct decl *declptr1, struct decl *declptr2);
+struct decl *check_is_type(struct decl *declptr);
+struct decl *check_function_call(struct decl *procptr, struct decl *actuals);
+struct decl *check_is_proc(struct decl *procptr);
+struct decl *check_is_declared_for_else(struct id *entry);  //entry를 가진 ste가 현재 stack scope에 있는지 확인 한다. Declare 할 때 필요하다.
+struct decl *check_is_declared_for_struct(struct id *entry);	//entry를 가진 ste가 전체 struct scope에 있는지 확인 한다. Struct를 Declare 할 때 필요하다.
+
 void add_type_to_var(struct decl *declptr1, struct decl *declptr2);
 
 struct ScopeStack SStack;
+struct ste *StrStack;
+struct decl *inttype;
+struct decl *chartype;
+struct decl *voidtype;
+struct id* returnid;
 
 unsigned int Hash(const char *key);
+void printStack(struct ste *top);
+void tellmetype(struct decl *declptr);
+struct ste *pushStr(struct id *entry, struct decl *declptr);	//StrStack에 push한다.
 #endif
 

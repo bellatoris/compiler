@@ -1920,13 +1920,14 @@ int read_line()
 
 void init_type()
 {
-    struct decl *inttype = maketypedecl(Hash("int"));
-    struct decl *chartype = maketypedecl(Hash("char"));
-    struct decl *voidtype = maketypedecl(VOID);
+    inttype = maketypedecl(Hash("int"));
+    chartype = maketypedecl(Hash("char"));
+    voidtype = maketypedecl(VOID);
 
     declare(enter(TYPE, "int", 3), inttype);
     declare(enter(TYPE, "char", 4), chartype);
     declare(enter(VOID, "void", 4), voidtype);
+    returnid = enter(ID, "*return", 7);
 }
 
 int main(int argc, char* argv[])
@@ -1937,6 +1938,7 @@ int main(int argc, char* argv[])
     SStack.TOP = (struct ScopeNode*)malloc(sizeof(struct ScopeNode));
     SStack.TOP->prev = NULL;
     SStack.TOP->top = NULL;
+    StrStack = NULL;
     
     static char *keyword[] = { "int", "char", "void", "struct", "return", "if", "else", "while", "for", "break", "continue", NULL };
    static int tokentype[] = { TYPE, TYPE, VOID, STRUCT, RETURN, IF, ELSE, WHILE, FOR, BREAK, CONTINUE, 0 };
