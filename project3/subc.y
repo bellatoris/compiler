@@ -95,11 +95,12 @@ ext_def
 		}
 		| func_decl { 
 		    push_scope();
-		    push_ste_list($1->formals);
+		    if($1)
+			push_ste_list($1->formals);
 		}
 		    compound_stmt {
 		    pop_scope();
-		    //REDUCE("ext_def->func_decl compound_stmt");
+		   // REDUCE("ext_def->func_decl compound_stmt");
 		}
 ;
 
@@ -457,7 +458,7 @@ binary
 ;
 unary
 		: '(' expr ')' {
-		    $$ = makevardecl($2);
+		    $$ = makeconstdecl($2);
 		    //REDUCE("unary->'(' expr ')'");
 		}
 		| '(' unary ')' {
@@ -526,7 +527,7 @@ unary
 		| '&' unary %prec '!' {
 		    if(check_is_var_type($2))
 		    {
-			$$ = makevardecl(makeptrdecl($2->type));
+			$$ = makeconstdecl(makeptrdecl($2->type));
 		    }
 		    else
 		    {
@@ -767,7 +768,7 @@ struct decl *makestringconstdecl(struct decl *typeptr, const char* stringconst)
 {
     struct decl *temp = (struct decl*)malloc(sizeof(struct decl));
     temp->declclass = Hash("CONST");
-    temp->type = makeptrdecl(makevardecl(typeptr));
+    temp->type = makeptrdecl(typeptr);
     temp->stringvalue = stringconst;
     return temp;
 }
@@ -882,7 +883,12 @@ struct decl *arrayaccess(struct decl *arrayptr, struct decl *indexptr)
 
 struct decl *plustype(struct decl *type1, struct decl *type2)
 {
-    if(type1 == inttype && type2 == inttype)
+    if(type1 == NULL || type2 == NULL)
+    {
+	printf("%d: error: type is not suitable for plus\n",read_line());
+	return NULL;
+    }
+    else if(type1 == inttype && type2 == inttype)
     {
 	return inttype;
     }
@@ -900,7 +906,12 @@ struct decl *plustype(struct decl *type1, struct decl *type2)
 
 struct decl *minustype(struct decl *type1, struct decl *type2)
 {
-    if(type1 == inttype && type2 == inttype)
+    if(type1 == NULL || type2 == NULL)
+    {
+	printf("%d: error: type is not suitable for plus\n",read_line());
+	return NULL;
+    }
+    else if(type1 == inttype && type2 == inttype)
     {
 	return inttype;
     }
@@ -994,7 +1005,7 @@ struct decl *check_is_const_type(struct decl *declptr)
 
 struct decl *check_compatible(struct decl *declptr1, struct decl *declptr2)
 {
-    if(declptr2)
+    if(declptr2 && declptr1)
     {
 	//REDUCE("errorcheckpoint1");
 	if(declptr1->typeclass == Hash("ptr"))	    //declptr1이 포인터 인 경우
@@ -1024,13 +1035,14 @@ struct decl *check_compatible(struct decl *declptr1, struct decl *declptr2)
     //error
     printf("%d: error: declaration error. it's not compatible\n", read_line());
     //REDUCE("it's mean error");
+    //yyerror("error: declarartion error. it's not compatible");
     return NULL;
 }
 
 struct decl *check_compatible_type(struct decl *declptr1, struct decl *declptr2)
 {
     
-    if(declptr2)
+    if(declptr2 && declptr1)
     {
 	if(declptr1->typeclass == Hash("ptr"))	    //declptr1이 포인터 인 경우
 	{
