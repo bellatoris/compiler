@@ -21,9 +21,9 @@ void    REDUCE(char* s);
 	struct decl *declptr;
 	struct ste  *steptr;
 }
-/* %type<declptr>	    ext_def type_specifier stuct_specifier func_decl pointers paran_list param_decl def_list def compound_stmt local_defs stmt_list stmt expr_e expr or_expr or_list and_expr and_list binary unary args */
-%type<declptr>	    ext_def type_specifier func_decl param_decl struct_specifier 
-def_list unary binary expr args pointers def
+ %type<declptr>	    ext_def type_specifier struct_specifier func_decl pointers param_list param_decl def_list def compound_stmt local_defs expr_e expr or_expr or_list and_expr and_list binary unary args
+/*%type<declptr>	    ext_def type_specifier func_decl param_decl struct_specifier 
+def_list unary binary expr args pointers def or_expr or_list */
 %nonassoc<idptr>    ID TYPE VOID
 /* Precedences and Associativities */
 
@@ -62,66 +62,47 @@ def_list unary binary expr args pointers def
 program: ext_def_list
    ;
 ext_def_list: ext_def_list ext_def
-        | /* empty */ { REDUCE("ext_def_list->epsilion"); }
+        | /* empty */ {
+	   // REDUCE("ext_def_list->epsilion");
+	}
    ;
 
 ext_def
 		: type_specifier pointers ID ';' {
-		    if(!check_is_declared_for_else($3) && $1)	//ID와 동일한 ste가 현재 scope에 있는지 확인
+		    if($1 && !check_is_declared_for_else($3))	//ID와 동일한 ste가 현재 scope에 있는지 확인
 		    {
 			declare($3, makevardecl($2? $2:$1)); 
 		    }
 		    else
 		    {
-			//error
-			printf("%d: error: declaration error\n",read_line());
 			$$ = NULL;
-		    
-			REDUCE("ext_def->type_specifier pointers ID ';'");
+			//REDUCE("ext_def->type_specifier pointers ID ';'");
 		    }
-		    printStack(SStack.TOP->top);
 		}
 		| type_specifier pointers ID '[' const_expr ']' ';' {
-		    if(!check_is_declared_for_else($3) && $1)
+		    if($1 && !check_is_declared_for_else($3))
 		    {
 			declare($3, makeconstdecl(makearraydecl($<intVal>5, makevardecl($2? $2:$1))));
 		    }
 		    else
 		    {
-			//error
-			printf("%d: error: declaration error\n",read_line());
 			$$ = NULL;
-		    
-			REDUCE("ext_def->type_specifier pointers ID '[' const_expr ']' ';' ");
+			//REDUCE("ext_def->type_specifier pointers ID '[' const_expr ']' ';' ");
 		    }
-		    printStack(StrStack);
 		}
 		| func_decl ';' {
-		    if(!$1)
-		    {
-			printf("%d: error: declaration error\n",read_line());
-			REDUCE("ext_def->func_decl ';'");
-		    }
+		    //REDUCE("ext_def->func_decl ';'");
 		}
 		| type_specifier ';' {
-		    if(!$1)
-		    {
-			printf("%d: error: declaration error\n",read_line());
-			REDUCE("ext_def->type_specifier ';'");
-		    }
+		    //REDUCE("ext_def->type_specifier ';'");
 		}
 		| func_decl { 
 		    push_scope();
-		    if($1)
-			push_ste_list($1->formals);
+		    push_ste_list($1->formals);
 		}
 		    compound_stmt {
 		    pop_scope();
-		    if(!$1)
-		    {
-			printf("%d: error: declaration error\n",read_line());
-			REDUCE("ext_def->func_decl compound_stmt");
-		    }
+		    //REDUCE("ext_def->func_decl compound_stmt");
 		}
 ;
 
@@ -143,25 +124,26 @@ type_specifier
 		    else
 		    {
 			//error
+			printf("%d: error: declaration error. it's not type\n",read_line());
 			$$ = NULL;
-			REDUCE("type_specifier->TYPE");
+			//REDUCE("type_specifier->TYPE");
 		    }
 		}
 		| VOID {
 		    struct decl *typeptr = finddecl($1);
 		    //check_is_type(typeptr);
 		    $$ = typeptr;
-		    REDUCE("type_specifier->VOID");
+		   // REDUCE("type_specifier->VOID");
 		}
 		| struct_specifier { 
 		    $$ = $1;
-		    if(!$$)
-			REDUCE("type_specifier->struct_specifier"); 
+		    //REDUCE("type_specifier->struct_specifier");
 		}
 ;
 
 struct_specifier
 		: STRUCT ID '{'{
+		    $<declptr>$ = check_is_declared_for_struct($2);
 		    push_scope();
 		}		    
 		    def_list /* popscope reverses stes */{
@@ -170,7 +152,7 @@ struct_specifier
 		}
 		    '}'
 		{
-		    if(!check_is_declared_for_struct($2))
+		    if(!$<declptr>4)
 		    {
 			pushStr($2, $$ = makestructdecl($<steptr>6));
 		    }
@@ -178,7 +160,7 @@ struct_specifier
 		    {
 			//error
 			$$ = NULL;
-			REDUCE("struct_specifier->STRUCT ID '{' def_list '}'");
+			//REDUCE("struct_specifier->STRUCT ID '{' def_list '}'");
 		    }
 		}
 		| STRUCT ID {
@@ -198,8 +180,9 @@ struct_specifier
 		    else
 		    {
 			//error;
+			printf("%d: error: declaration error. it's not struct\n",read_line());
 			$$ = NULL;
-			REDUCE("struct_specifier->STRUCT ID"); 
+			//REDUCE("struct_specifier->STRUCT ID"); 
 		    }
 		}
 ;
@@ -207,10 +190,7 @@ struct_specifier
 func_decl
 		: type_specifier pointers ID '(' {
 		    struct decl *procdecl = makeprocdecl();
-		    /*if(!check_is_declared_for_else($3))
-		    {
-			declare($3, procdecl);
-		    }*/
+		    $<declptr>4 = check_is_declared_for_else($3);
 		    push_scope();
 		    declare(returnid, $2? $2:$1);
 		    $<declptr>$ = procdecl;
@@ -220,7 +200,7 @@ func_decl
 		    formals = pop_scope();
 		    procdecl->returntype = formals->decl;
 		    procdecl->formals = formals;
-		    if(!check_is_declared_for_else($3))
+		    if(!$<declptr>4)
 		    {
 			$$ = procdecl;
 			declare($3, procdecl);
@@ -228,13 +208,12 @@ func_decl
 		    else
 		    {
 			$$ = NULL;
-			REDUCE("func_decl->type_specifier pointers ID '(' ')'");
+			//REDUCE("func_decl->type_specifier pointers ID '(' ')'");
 		    }
 		}
 		| type_specifier pointers ID '(' {
 		    struct decl *procdecl = makeprocdecl();
-		    /*if(!check_is_declared_for_else($3))
-			declare($3, procdecl);*/
+		    $<declptr>4 = check_is_declared_for_else($3);
 		    push_scope();
 		    declare(returnid, $2? $2:$1);
 		    $<declptr>$ = procdecl;
@@ -245,7 +224,7 @@ func_decl
 		    formals = pop_scope();
 		    procdecl->returntype = formals->decl;
 		    procdecl->formals = formals;
-		    if(!check_is_declared_for_else($3))
+		    if(!$<declptr>4)
 		    {
 			$$ = procdecl;
 			declare($3, $$);
@@ -253,25 +232,23 @@ func_decl
 		    else
 		    {
 			$$ = NULL;
-			REDUCE("func_decl->type_specifier pointer ID '(' VOID ')' ");
+			//REDUCE("func_decl->type_specifier pointer ID '(' VOID ')' ");
 		    }
 		}
 		| type_specifier pointers ID '(' {
 		    struct decl *procdecl = makeprocdecl();
-		    /*if(!check_is_declared_for_else($3))
-			declare($3, procdecl);*/
-		    push_scope(); /*for collecting formals */
+		    $<declptr>4 = check_is_declared_for_else($3);
+		    push_scope();
 		    declare(returnid, $2? $2:$1);
 		    $<declptr>$ = procdecl;
 		} param_list ')' {
 		    struct ste *formals;
 		    struct decl *procdecl = $<declptr>5;
-		    //printStack(SStack.TOP->top);
 		    formals = pop_scope();
 		    /* pop_scope reverses stes(first one is the returnid) */
 		    procdecl->returntype = formals->decl; /* No for type checking */
 		    procdecl->formals = formals;	// must check again
-		    if(!check_is_declared_for_else($3))
+		    if(!$<declptr>4)
 		    {
 			$$ = procdecl;
 			declare($3, $$);
@@ -281,142 +258,151 @@ func_decl
 		    else
 		    {
 			$$ = NULL;
-			REDUCE("func_decl->type_specifier pointers ID '(' param_list ')' ");
+			//REDUCE("func_decl->type_specifier pointers ID '(' param_list ')' ");
 		    }
 		}
-    
 ;
 
 pointers
 		: '*' {
 		    $$ = makeptrdecl($<declptr>0);
-		    REDUCE("pointers->'*'");
+		    //REDUCE("pointers->'*'");
 		}
 		| /* empty */ {
 		    $$ = NULL;
-		    REDUCE("pointers->epsilon");
+		    //REDUCE("pointers->epsilon");
 		}
 ;
 param_list  /* list of formal parameter declaration */
 		: param_decl {
-		    REDUCE("param_list->param_decl");
+		    //REDUCE("param_list->param_decl");
 		}
 		| param_list ',' param_decl {
-		    REDUCE("param_list->param_list ',' param_decl");
+		    //REDUCE("param_list->param_list ',' param_decl");
 		}
 ;
 param_decl  /* formal parameter declaration */
 		: type_specifier pointers ID {
 		    declare($3, makevardecl($2? $2:$1));
-		    REDUCE("param_decl->type_specifier pointers ID");
+		    //REDUCE("param_decl->type_specifier pointers ID");
 		}
 		| type_specifier pointers ID '[' const_expr ']' {
 		    declare($3, makeconstdecl(makearraydecl($<intVal>5, makevardecl($2? $2:$1))));
-		    REDUCE("param_decl->type_specifier pointers ID '[' const_expr ']'");
+		    //REDUCE("param_decl->type_specifier pointers ID '[' const_expr ']'");
 		}
 ;
 def_list    /* list of definitions, definition can be type(struct), variable, function */
 		: def_list def {
-		    REDUCE("def_list->def_list def");
+		   // REDUCE("def_list->def_list def");
 		}
 		| /* empty */ {
-		    REDUCE("def_list->epsilon");
+		   // REDUCE("def_list->epsilon");
 		}
 ;
 def
 		: type_specifier pointers ID ';'{
-		    if(!check_is_declared_for_else($3) && $1)
+		    if($1 && !check_is_declared_for_else($3))
 		    {
 			declare($3, makevardecl($2? $2:$1));
+			//printStack(SStack.TOP->top);
 		    }
 		    else
 		    {
 			$$ = NULL;
-			REDUCE("def->type_specifier pointerts ID ';'");
+			//REDUCE("def->type_specifier pointerts ID ';'");
 		    }
 		}
 		| type_specifier pointers ID '[' const_expr ']' ';' {
-		    if(!check_is_declared_for_else($3) && $1)
+		    if($1 && !check_is_declared_for_else($3))
 		    {
-		    declare($3, makeconstdecl(makearraydecl($<intVal>5, makevardecl($2? $2:$1))));
+			declare($3, makeconstdecl(makearraydecl($<intVal>5, makevardecl($2? $2:$1))));
 		    }
 		    else
 		    {
 			$$= NULL;
-			REDUCE("def->type_specifier pointers ID '[' const_expr ']' ';' ");
+			//REDUCE("def->type_specifier pointers ID '[' const_expr ']' ';' ");
 		    }
 		}
 		| type_specifier ';' {
 		    if(!$1)
 		    {
 			$$ = NULL;
-			REDUCE("def->type_specifier ';'");
+			//REDUCE("def->type_specifier ';'");
 		    }
 		}
 		| func_decl ';' {
 		    if(!$1)
 		    {
 			$$ = NULL;
-			REDUCE("def->func_decl ';'");
+			//REDUCE("def->func_decl ';'");
 		    }
 		}
 ;
 compound_stmt
 		: '{' local_defs stmt_list '}' {
-		    REDUCE("compound_stmt->'{' local_defs stmt_list '}'");
+		    //REDUCE("compound_stmt->'{' local_defs stmt_list '}'");
 		}
 ;
 local_defs  /* local definitions, of which scope is only inside of compound statement */
 		: def_list {
-		    //printStack(SStack.TOP->top);
-		    REDUCE("local_defs->def_list");
+		    //REDUCE("local_defs->def_list");
 		}
 ;
 stmt_list
 		: stmt_list stmt {
-		    REDUCE("stmt_list->stmt_list stmt");
+		    //REDUCE("stmt_list->stmt_list stmt");
 		}
 		| /* empty */ {
-		    REDUCE("stmt_list->epsilon");
+		    //REDUCE("stmt_list->epsilon");
 		}
 ;
 stmt
 		: expr ';' {
-		    REDUCE("stmt->expr ';'");
+		    //REDUCE("stmt->expr ';'");
 		}
 		| compound_stmt {
-		    REDUCE("stmt->compound_stmt");
+		    //REDUCE("stmt->compound_stmt");
 		}
 		| RETURN ';' {
-		    if(!check_same_type(finddecl(returnid), voidtype))
-			REDUCE("stmt->RETURN ';'");
+		    check_compatible(finddecl(returnid), voidtype);
+		    //REDUCE("stmt->RETURN ';'");
 		}
 		| RETURN expr ';' {
-		    if(!check_same_type(finddecl(returnid), $2))
-		    REDUCE("stmt->RETURN expr ';'");
+		    check_compatible(finddecl(returnid), $2);
+		    //REDUCE("stmt->RETURN expr ';'");
 		}
 		| ';' {
-		    REDUCE("stmt->';'");
+		   // REDUCE("stmt->';'");
 		}
 		| IF '(' expr ')' stmt %prec ELSE
-		| IF '(' expr ')' stmt ELSE stmt %prec ELSE
-		| WHILE '(' expr ')' stmt
-		| FOR '(' expr_e ';' expr_e ';' expr_e ')' stmt
+		| IF '(' expr ')' stmt ELSE stmt %prec ELSE 
+		| WHILE '(' expr ')' stmt 
+		| FOR '(' expr_e ';' expr_e ';' expr_e ')' stmt 
 		| BREAK ';'
-		| CONTINUE ';'
+		| CONTINUE ';' 
 ;
 expr_e
 		: expr
-		| /* empty */
+		|/* empty */ {
+		    //REDUCE("expr_e->epsilon");
+		}
 ;
 const_expr
 		: expr
 ;
 expr
 		: unary '=' expr {
-		    check_is_var_type($1);
-		    check_compatible($1, $3);
-		    $$ = $1->type;
+		    if(check_is_var_type($1))
+		    {
+			if(check_compatible($1->type, $3))
+			{
+			    $$ = $1->type;
+			}
+			else
+			    $$ = NULL;
+		    }
+		    else
+			$$ = NULL;
 		}
 		| or_expr
 ;
@@ -424,14 +410,32 @@ or_expr
 		: or_list
 ;
 or_list
-		: or_list LOGICAL_OR and_expr
+		: or_list LOGICAL_OR and_expr {
+		    if(check_compatible_type($1, inttype) && check_compatible_type($3, inttype))
+		    {
+			$$ = $1;
+		    }
+		    else
+		    {
+			$$ = NULL;
+		    }
+		}
 		| and_expr
 ;
 and_expr
 		: and_list
 ;
 and_list
-		: and_list LOGICAL_AND binary
+		: and_list LOGICAL_AND binary {
+		    if(check_compatible_type($1, inttype) && check_compatible_type($3, inttype))
+		    {
+			$$ = $1;
+		    }
+		    else
+		    {
+			$$ = NULL;
+		    }
+		}
 		| binary
 ;
 binary
@@ -448,56 +452,159 @@ binary
 		    $$ = minustype($1, $3);
 		}
 		| unary %prec '=' {
-		    $$ = $1->type;
+		    if($1)
+			$$ = $1->type;
+		    else 
+			$$ = NULL;
 		}
 ;
 unary
 		: '(' expr ')' {
-		    REDUCE("unary->'(' expr ')'");
+		    $$ = $2;
+		    //REDUCE("unary->'(' expr ')'");
 		}
 		| '(' unary ')' {
-		    REDUCE("unary->'(' unary ')'");
+		    $$ = $2;
+		    //REDUCE("unary->'(' unary ')'");
 		}
 		| INTEGER_CONST {
 		    $$ = makenumconstdecl(inttype, $1);
 		}
-		| CHAR_CONST
-		| STRING
-		| ID {
-		    $$ = finddecl($1);
-		    REDUCE("unary->ID"); 
+		| CHAR_CONST {
+		    $$ = makecharconstdecl(chartype, $1);
+		    //REDUCE("unary->CHAR_CONST");
 		}
-		| '-' unary %prec '!'
-		| '!' unary
-		| unary INCOP
-		| unary DECOP
-		| INCOP unary
-		| DECOP unary
-		| '&' unary %prec '!'
-		| '*' unary %prec '!'
+		| STRING {
+		    $$ = makestringconstdecl(chartype, $1);
+		    //REDUCE("unary->STRING");
+		}
+		| ID {
+		    if(finddecl($1))
+		    {
+			$$ = finddecl($1);
+		    }
+		    else
+		    {
+			//error
+			printf("%d: error: declaration error. it's not id\n",read_line());
+			$$ = NULL;
+		    }
+		}
+		| '-' unary %prec '!'{
+		    if(check_compatible_type($2->type, inttype))
+		    {
+			$$ = $2;
+		    }
+		    else
+			$$ = NULL;
+		}
+		| '!' unary {
+		    if(check_compatible_type($2->type, inttype))
+		    {
+			$$ = $2;
+		    }
+		    else
+			$$ = NULL;
+		}
+		| unary INCOP {
+		    if(!INDECOPtype($1->type))
+			$$ = NULL;
+		}
+		| unary DECOP {
+		    if(!INDECOPtype($1->type))
+			$$ = NULL;
+		}
+		| INCOP unary {
+		    if(!INDECOPtype($2->type))
+			$$ = NULL;
+		    else
+			$$ = $2;
+		}
+		| DECOP unary {
+		    if(!INDECOPtype($2->type))
+			$$ = NULL;
+		    else
+			$$ = $2;
+		}
+		| '&' unary %prec '!' {
+		    if(check_is_var_type($2))
+		    {
+			$$ = makevardecl(makeptrdecl($2->type));
+		    }
+		    else
+		    {
+			//error
+			$$ = NULL;
+		    }
+		}
+		| '*' unary %prec '!' {
+		    if(check_is_var_type($2) && check_is_ptr_type($2->type))
+		    {
+			$$ = makevardecl($2->type->ptrto);
+		    }
+		    else
+		    {
+			//error
+			$$ = NULL;
+		    }
+		}
 		| unary '[' expr ']' {
-		    $$ = arrayaccess($1, $3);
+		    if(check_is_const_type($1))
+		    {
+			$$ = arrayaccess($1, $3);
+		    }
+		    else
+		    {
+			$$ = NULL;
+		    }
 		}
 		| unary '.' ID {
-		    $$ = structaccess($1, $3);
+		    if(check_is_var_type($1))
+		    {
+			$$ = structaccess($1, $3);
+		    }
+		    else
+		    {
+			$$ = NULL;
+		    }
 		}
 		| unary STRUCTOP ID {
-		    $$ = structPtraccess($1, $3);
+		    if(check_is_var_type($1))
+		    {
+			$$ = structPtraccess($1, $3);
+		    }
+		    else
+		    {
+			$$ = NULL;
+		    }
 		}
 		| unary '(' args ')'{
-		    check_is_proc($1);
-		    $$ = check_function_call($1, $3);
-		    REDUCE("unary->unary '(' args ')'");
+		    if(check_is_proc($1))
+		    {
+			$$ = check_function_call($1, $3);
+		    }
+		    else
+		    {	
+			$$ = NULL;
+			//REDUCE("unary->unary '(' args ')'");
+		    }
 		}
 		| unary '(' ')' {
-		    check_is_proc($1);
-		    $$  = check_function_call($1, NULL);
-		    REDUCE("unary->unary '(' ')'");
+		    if(check_is_proc($1))
+		    {
+			$$  = check_function_call($1, NULL);
+		    }
+		    else
+		    {
+			$$ = NULL;
+			//REDUCE("unary->unary '(' ')'");
+		    }
 		}
 ;
 args    /* actual parameters(function arguments) transferred to function */
 		: expr {
 		    $$ = $1;
+		    $$->next = NULL;
 		}
 		| expr ',' args {
 		    $1->next = $3;
@@ -575,10 +682,6 @@ struct ste *insert(id *entry, struct decl *declptr)	/* declare와 똑같은 함�
     return SStack.TOP->top;
 }
 
-void lookup()
-{
-}
-
 
 
 
@@ -650,7 +753,26 @@ struct decl *makenumconstdecl(struct decl *typeptr, int intconst)
     struct decl *temp = (struct decl*)malloc(sizeof(struct decl));
     temp->declclass = Hash("CONST");
     temp->type = typeptr;
-    temp->value = intconst;
+    temp->intvalue = intconst;
+    return temp;
+}
+
+struct decl *makecharconstdecl(struct decl *typeptr, char *charconst)
+{
+    struct decl *temp = (struct decl*)malloc(sizeof(struct decl));
+    temp->declclass = Hash("CONST");
+    temp->type = typeptr;
+    temp->charvalue = charconst;
+    return temp;
+}
+
+struct decl *makestringconstdecl(struct decl *typeptr, const char* stringconst)
+{
+    struct decl *temp = (struct decl*)malloc(sizeof(struct decl));
+    temp->declclass = Hash("CONST");
+    temp->type = makeptrdecl(makevardecl(typeptr));
+    temp->stringvalue = stringconst;
+    return temp;
 }
 
 struct decl *makeprocdecl()
@@ -676,7 +798,6 @@ struct decl *finddecl(id *entry)	    /* entry에 해당하는 name을 가진 ste
 	}
 	temp = temp->prev;
     }
-    //printf("%d: error: declaration error\n",read_line());
     return NULL;
 }
 
@@ -691,7 +812,6 @@ struct decl *findstructdecl(struct id *entry)
 	}
 	temp = temp->prev;
     }
-    //printf("%d: error: declaration error\n", read_line());
     return NULL;
 }
 
@@ -707,7 +827,7 @@ struct decl *findcurrentdecl(struct id *fieldid, struct ste *fieldlist)
 		}
 	    temp = temp->prev;
         }
-    printf("%d: error: declaration error",read_line());
+    printf("%d: error: declaration error. it's not member of struct",read_line());
     return NULL;
 }
 
@@ -719,23 +839,42 @@ struct decl *findcurrentdecl(struct id *fieldid, struct ste *fieldlist)
 struct decl *structaccess(struct decl *structptr, struct id *fieldid)
 {
     struct decl *typeptr = structptr->type;
-    check_is_struct_type(typeptr);
-    return(findcurrentdecl(fieldid, typeptr->fieldlist));
+    if(check_is_struct_type(typeptr))
+	return(findcurrentdecl(fieldid, typeptr->fieldlist));
+    else
+	return NULL;
 }
 
 struct decl *structPtraccess(struct decl *structptr, struct id *fieldid)
 {
     struct decl *typeptr = structptr->type;
-    check_is_struct_type(typeptr->type);
-    return(findcurrentdecl(fieldid, typeptr->type->fieldlist));
+    if(check_is_ptr_type(typeptr))
+    {
+	typeptr = typeptr->ptrto;
+	if(check_is_struct_type(typeptr))
+	    return(findcurrentdecl(fieldid, typeptr->fieldlist));
+	else
+	    return NULL;
+    }
+    else
+	return NULL;
 }
 
 struct decl *arrayaccess(struct decl *arrayptr, struct decl *indexptr)
 {
     struct decl *arraytype = arrayptr->type;
-    check_is_array_type(arraytype);
-    check_same_type(inttype, indexptr);
-    return (arraytype->elementvar);
+    if(check_is_array_type(arraytype))
+    {
+	if(check_compatible_type(indexptr, inttype))
+	    return (arraytype->elementvar);
+	else
+	{
+	    REDUCE("error index is wrong");
+	    return NULL;
+	}
+    }
+    else
+	return NULL;
 }
 
 
@@ -746,117 +885,221 @@ struct decl *arrayaccess(struct decl *arrayptr, struct decl *indexptr)
 
 struct decl *plustype(struct decl *type1, struct decl *type2)
 {
-    struct decl *type_after;
-    type_after = check_compatible_type(type1, type2);
-    return type_after;
+    if(type1 == inttype && type2 == inttype)
+    {
+	return inttype;
+    }
+    else if(type1 == inttype && type2->typeclass == Hash("ptr"))
+    {
+	return inttype;
+    }
+    else if(type1->typeclass == Hash("ptr") && type2 == inttype)
+    {
+	return type1;
+    }
+    printf("%d: error: type is not suitable for plus\n",read_line());
+    return NULL;
 }
 
 struct decl *minustype(struct decl *type1, struct decl *type2)
 {
-    struct decl *type_after;
-    type_after = check_compatible_type(type1, type2);
-    return type_after;
+    if(type1 == inttype && type2 == inttype)
+    {
+	return inttype;
+    }
+    else if(type1->typeclass == Hash("ptr") && type2 == inttype)
+    {
+	return type1;
+    }
+    printf("%d: error: type is not suitable for minus\n",read_line());
+    return NULL;
 }
 
 struct decl *reloptype(struct decl *type1, struct decl *type2)
 {
-    struct decl *type_after;
-    type_after = check_compatible_type(type1, type2);
-    return type_after;
+    if(check_compatible_type(type1, type2))
+    {
+	if(type1->typeclass == Hash("struct"))
+	{
+	    printf("%d: error: type is not suitable for RELOP\n",read_line());
+	    return NULL;
+	}
+	else
+	{
+	    return inttype;
+	}
+    }
+    return NULL;
 }
     
 struct decl *equoptype(struct decl *type1, struct decl *type2)
 {
-    struct decl *type_after;
-    type_after = check_compatible_type(type1, type2);
-    return type_after;
+    if(check_compatible_type(type1, type2))
+    {
+	if(type1->typeclass == Hash("struct"))
+	{
+	    printf("%d: error: type is not suitable for EQUOP\n",read_line());
+	    return NULL;
+	}
+	else
+	{
+	    return inttype;
+	}
+    }
 }
 
+struct decl *INDECOPtype(struct decl *type)
+{
+    if(type == inttype || type == chartype)
+    {
+	return type;
+    }
+    else if(type->typeclass == Hash("ptr"))
+    {
+	return type;
+    }
+    else
+    {
+	printf("%d: error: type is not suitable for INCOP or DECOP\n",read_line());
+	return NULL;
+    }
+}
 
 
 
 
 struct decl *check_is_var_type(struct decl *declptr)
 {
-    if(declptr->typeclass == Hash("VAR"))
+    if(declptr && declptr->declclass == Hash("VAR"))
     {
 	return declptr;
     }
     else
     {
+	//error
+	printf("%d: error: declaration error. it's not variable\n", read_line());
         return NULL;
+    }
+}
+
+struct decl *check_is_const_type(struct decl *declptr)
+{
+    if(declptr && declptr->declclass == Hash("CONST"))
+    {
+	return declptr;
+    }
+    else
+    {
+	printf("%d: error: declaration error. it's not const\n", read_line());
+	return NULL;
     }
 }
 
 struct decl *check_compatible(struct decl *declptr1, struct decl *declptr2)
 {
-    if(declptr1->type == declptr2->type && declptr1->declclass == declptr2->declclass)
+    if(declptr2)
     {
-	return declptr1;
+	//REDUCE("errorcheckpoint1");
+	if(declptr1->typeclass == Hash("ptr"))	    //declptr1이 포인터 인 경우
+	{
+	    //REDUCE("errorcheckpoint2");
+	    if(declptr1->ptrto == declptr2->ptrto)	//type 확인
+	    {
+		//REDUCE("errorcheckpoint3");
+		return declptr1;
+	    }
+	    else if(declptr2->typeclass == Hash("array"))	// declptr2가 array인지 확인
+	    {
+		//REDUCE("errorcheckpoint4");
+		if(declptr1->ptrto == declptr2->elementvar->type)
+		{
+		    //REDUCE("errorcheckpoint5");
+		    return declptr1;
+		}
+	    }
+	}
+	else if(declptr1 == declptr2) //type이 같은가 확인
+	{
+	    //REDUCE("errorcheckpoint6");
+	    return declptr1;
+	}
     }
-    else
-    {
-	//error
-	return NULL;
-    }
+    //error
+    printf("%d: error: declaration error. it's not compatible\n", read_line());
+    //REDUCE("it's mean error");
+    return NULL;
 }
 
-struct decl *check_compatible_type(struct decl *type1, struct decl *type2)
+struct decl *check_compatible_type(struct decl *declptr1, struct decl *declptr2)
 {
-    if(type1 == type2)
+    
+    if(declptr2)
     {
-	return type1;
+	if(declptr1->typeclass == Hash("ptr"))	    //declptr1이 포인터 인 경우
+	{
+	    if(declptr1->ptrto == declptr2->ptrto)	//type 확인
+	    {
+		return declptr1;
+	    }
+	}
+	else if(declptr1 == declptr2) //type이 같은가 확인
+	{
+	    return declptr1;
+	}
     }
-    else
-    {
-	return NULL;
-    }
+    //error
+    printf("%d: error: declaration error. it's not compatible\n", read_line());
+    return NULL;
 }
 
 struct decl *check_is_struct_type(struct decl *structptr)
 {
-    if(structptr->typeclass == Hash("struct"))
+    if(structptr && structptr->typeclass == Hash("struct"))
     {
 	return structptr;
     }
     else
     {
+	printf("%d: error: declaration error. it's not struct\n", read_line());
 	return NULL;
     }
 }
 
 struct decl *check_is_array_type(struct decl *arrayptr)
 {
-    if(arrayptr->typeclass == Hash("array"))
+    if(arrayptr && arrayptr->typeclass == Hash("array"))
     {
 	return arrayptr;
     }
     else
     {
+	printf("%d: error: declaration error. it's not array\n", read_line());
 	return NULL;
     }
 }
 
-struct decl *check_same_type(struct decl *declptr1, struct decl *declptr2)
+struct decl *check_is_ptr_type(struct decl *ptrptr)
 {
-    if(declptr1 == declptr2)
+    if(ptrptr && ptrptr->typeclass == Hash("ptr"))
     {
-	return declptr1;
+	return ptrptr;
     }
     else
     {
+	printf("%d: error: declaration error. it's not poniter\n", read_line());
 	return NULL;
     }
 }
 
 struct decl *check_is_type(struct decl* declptr)
 {
-    if(declptr->declclass == TYPE)
+    if(declptr && declptr->declclass == TYPE)
     {
 	return declptr;
     }
     else
     {
+	printf("%d: error: declaration error. it's not type\n",read_line());
 	return NULL;
     //error checking
     }
@@ -870,28 +1113,41 @@ struct decl *check_function_call(struct decl *procptr, struct decl *actuals)
     /* 2. check for type match			*/
     while(formals != NULL && actuals != NULL)
     {
-	check_is_var_type(formals->decl);
-	check_compatible(formals->decl, actuals);
-	formals = formals->prev;
-	actuals = actuals->next;
+	if(check_is_var_type(formals->decl))
+	{
+	    if(check_compatible(formals->decl->type, actuals))
+	    {
+		formals = formals->prev;
+		actuals = actuals->next;
+	    }
+	    else
+	    {
+		break;
+	    }
+	}
+	else
+	{
+	    break;
+	}
     }
-
     if(formals || actuals)
     {
+	printf("%d: error: argument error\n",read_line());
 	return NULL;
     }
 
-    return procptr->returntype;  /* for decl of the call */
+    return makevardecl(procptr->returntype);  /* for decl of the call */
 }
 
 struct decl *check_is_proc(struct decl *procptr)
 {
-    if(procptr->declclass == Hash("FUNC"))
+    if(procptr && procptr->declclass == Hash("FUNC"))
     {
 	return procptr;
     }
     else
     {
+	printf("%d: error: declaration error. it's not function\n",read_line());
 	return NULL;
     }
 }
@@ -910,58 +1166,53 @@ struct decl *check_is_declared_for_else(struct id *entry)
     {
 	if(temp->name == entry)
 	{
-	    //printf("%d: error: declaration error\n",read_line());
+	    printf("%d: error: declaration error. it's already declared\n",read_line());
 	    return temp->decl;
 	}
 	temp = temp->prev;
     }
     
-   /* temp = StrStack;
+    temp = StrStack;
     while(temp)
     {
 	if(temp->name == entry)
 	{
-	    //printf("%d: error: declaration error\n", read_line());
+	    printf("%d: error: declaration error. it's already declared\n",read_line());
 	    return NULL;
 	}
 	temp = temp->prev;
-    } */
-
+    } 
     return NULL;
 }
 
 struct decl *check_is_declared_for_struct(struct id *entry)
 {
     struct ste *temp = SStack.TOP->top;
-   /* while(temp)
+    while(temp)
     {
 	if(temp->name == entry)
 	{
+	    printf("%d: error: declaration error. it's already declared\n",read_line());
 	    return temp->decl;
 	}
 	temp = temp->prev;
-    }*/
+    }
 
     temp = StrStack;
     while(temp)
     {
 	if(temp->name == entry)
 	{
+	    printf("%d: error: declaration error. it's alreay declared\n",read_line());
 	    return temp->decl;
 	}
 	temp = temp->prev;
     }
-
     return NULL;
 }
 
 
 
-
-void add_type_to_var(struct decl *declptr1, struct decl *declptr2)
-{
-
-}
 
 
 unsigned int Hash(const char *key)
@@ -993,44 +1244,44 @@ void tellmetype(struct decl *declptr)
 
     if(temp->declclass == Hash("VAR"))
     {
-	REDUCE("VAR");
+	REDUCE("Declclass is VAR");
     }
     else if(temp->declclass == Hash("CONST"))
     {
-	REDUCE("CONST");
+	REDUCE("Declclass is CONST");
     }
     else if(temp->declclass == Hash("FUNC"))
     {
-	REDUCE("FUNC");
+	REDUCE("Declclass is FUNC");
     }
     else if(temp->declclass == TYPE)
     {
-	REDUCE("TYPE");
+	REDUCE("Declclass is TYPE");
     }
 
     if(temp->typeclass == Hash("int"))
     {
-	REDUCE("INT");
+	REDUCE("Typeclass is INT");
     }
     else if(temp->typeclass == Hash("ptr"))
     {
-	REDUCE("Pointer");
+	REDUCE("Typeclass is Pointer");
     }
     else if(temp->typeclass == Hash("array"))
     {
-	REDUCE("Array");
+	REDUCE("Typeclass is Array");
     }
     else if(temp->typeclass == Hash("char"))
     {
-	REDUCE("CHAR");
+	REDUCE("Typeclass is CHAR");
     }
     else if(temp->typeclass == Hash("struct"))
     {
-	REDUCE("Struct");
+	REDUCE("Typeclass is Struct");
     }
     else if(temp->typeclass == VOID)
     {
-	REDUCE("VOID");
+	REDUCE("Typeclass is VOID");
     }
     
     printf("\n");

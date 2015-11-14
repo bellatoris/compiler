@@ -18,7 +18,7 @@ id		{letter}({letter}|{digit})*
 integer_const	([1-9]{digit}*)|"0"
 white_space		[ \t]+
 special_char	\\[nt]
-Operators 	    [\(\)\[\]\{\}\-\,\!\+\/\%\=\&\|\;\*]
+Operators 	    [\(\)\[\]\{\}\-\,\!\+\/\%\=\&\|\;\*\.]
 
 
 %x COMMENT
