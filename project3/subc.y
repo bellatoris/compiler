@@ -3,13 +3,10 @@
  * File Name   : subc.y
  * Description : a skeleton bison input
  */
-
 #include "subc.h"
-
 int    yylex ();
 int    yyerror (char* s);
 void    REDUCE(char* s);
-
 %}
 
 /* yylval types */
@@ -460,7 +457,7 @@ binary
 ;
 unary
 		: '(' expr ')' {
-		    $$ = $2;
+		    $$ = makevardecl($2);
 		    //REDUCE("unary->'(' expr ')'");
 		}
 		| '(' unary ')' {
@@ -490,7 +487,7 @@ unary
 			$$ = NULL;
 		    }
 		}
-		| '-' unary %prec '!'{
+		| '-' unary %prec '!' {
 		    if(check_compatible_type($2->type, inttype))
 		    {
 			$$ = $2;
