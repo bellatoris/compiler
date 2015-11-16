@@ -1918,7 +1918,7 @@ int read_line()
    return lineno;
 }
 
-void init_type()
+void init_type(char *argv)
 {
     inttype = maketypedecl(Hash("int"));
     chartype = maketypedecl(Hash("char"));
@@ -1928,6 +1928,10 @@ void init_type()
     declare(enter(TYPE, "char", 4), chartype);
     declare(enter(VOID, "void", 4), voidtype);
     returnid = enter(ID, "*return", 7);
+    if(argv)
+	filename = argv;
+    else
+	filename = NULL;
 }
 
 int main(int argc, char* argv[])
@@ -1946,13 +1950,22 @@ int main(int argc, char* argv[])
     for(i = 0; keyword[i] != NULL; i++)
 	enter(tokentype[i], keyword[i], strlen(keyword[i]));
 
-    init_type();
-
     if(argc >= 2) yyin = fopen(argv[1], "r");
 	else yyin = stdin;
     if(!yyin) {
 	printf("Can't open input stream!\n");
         exit(1);
+    }
+    
+    if(argv)
+    {
+	char *file = (char *)malloc(sizeof(char)*strlen(argv[1]));
+	strcpy(filename, argv[1]);
+	init_type(file);
+    }
+    else
+    {
+	init_type(NULL);
     }
 	
     yyparse();

@@ -114,6 +114,7 @@ struct decl *inttype;
 struct decl *chartype;
 struct decl *voidtype;
 struct id* returnid;
+char *filename;
 
 unsigned int Hash(const char *key);	//VAR ptr array struct CONST FUNC
 void printStack(struct ste *top);

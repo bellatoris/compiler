@@ -459,6 +459,7 @@ binary
 unary
 		: '(' expr ')' {
 		    $$ = makeconstdecl($2);
+		    //$$ = $2;
 		    //REDUCE("unary->'(' expr ')'");
 		}
 		| '(' unary ')' {
@@ -616,8 +617,6 @@ args    /* actual parameters(function arguments) transferred to function */
 
 int    yyerror (char* s)
 {
-	fprintf (stderr, "%s\n", s);
-}
 
 void 	REDUCE( char* s)
 {
@@ -1145,7 +1144,7 @@ struct decl *check_function_call(struct decl *procptr, struct decl *actuals)
 	return NULL;
     }
 
-    return makevardecl(procptr->returntype);  /* for decl of the call */
+    return makeconstdecl(procptr->returntype);  /* for decl of the call */
 }
 
 struct decl *check_is_proc(struct decl *procptr)
