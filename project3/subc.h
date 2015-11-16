@@ -60,6 +60,7 @@ struct decl{
 
 id* enter(int lextype, char *name, int length);
 int read_line();
+void init_type();
 
 struct ste   *declare(id* entry, struct decl *declptr);
 

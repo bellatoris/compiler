@@ -1918,55 +1918,34 @@ int read_line()
    return lineno;
 }
 
-void init_type(char *argv)
-{
-    inttype = maketypedecl(Hash("int"));
-    chartype = maketypedecl(Hash("char"));
-    voidtype = maketypedecl(VOID);
-
-    declare(enter(TYPE, "int", 3), inttype);
-    declare(enter(TYPE, "char", 4), chartype);
-    declare(enter(VOID, "void", 4), voidtype);
-    returnid = enter(ID, "*return", 7);
-    if(argv)
-	filename = argv;
-    else
-	filename = NULL;
-}
-
 int main(int argc, char* argv[])
 {
-    hcreate(10000);
-/*    struct ScopeStack *SStack = (struct ScopeStack*)malloc(sizeof(struct ScopeStack));
-   */ 
-    SStack.TOP = (struct ScopeNode*)malloc(sizeof(struct ScopeNode));
-    SStack.TOP->prev = NULL;
-    SStack.TOP->top = NULL;
-    StrStack = NULL;
-    
+    hcreate(10000); 
+
     static char *keyword[] = { "int", "char", "void", "struct", "return", "if", "else", "while", "for", "break", "continue", NULL };
    static int tokentype[] = { TYPE, TYPE, VOID, STRUCT, RETURN, IF, ELSE, WHILE, FOR, BREAK, CONTINUE, 0 };
     int i;
     for(i = 0; keyword[i] != NULL; i++)
 	enter(tokentype[i], keyword[i], strlen(keyword[i]));
 
-    if(argc >= 2) yyin = fopen(argv[1], "r");
-	else yyin = stdin;
+    init_type();
+
+    if(argc >= 2)
+    {
+	yyin = fopen(argv[1], "r");
+	filename = (char*)malloc(sizeof(char)*strlen(argv[1]));
+	strcpy(filename, argv[1]);
+    }
+    else
+    {
+	yyin = stdin;
+	filename = NULL;
+    }
     if(!yyin) {
 	printf("Can't open input stream!\n");
         exit(1);
     }
-    
-    if(argv)
-    {
-	char *file = (char *)malloc(sizeof(char)*strlen(argv[1]));
-	strcpy(filename, argv[1]);
-	init_type(file);
-    }
-    else
-    {
-	init_type(NULL);
-    }
+
 	
     yyparse();
     fclose(yyin);

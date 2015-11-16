@@ -26,6 +26,7 @@ int main(void) {
 
 	c = func1(a, b);
 	c = func1(a, b, b); /* error */
+	c = func1(a, b);
 	d = func2(b); /* error */
 	d = func2();
 	
