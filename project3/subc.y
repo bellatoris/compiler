@@ -356,6 +356,15 @@ expr_e
 ;
 const_expr
 		: expr {
+		    if(check_compatible_type($1, inttype))
+		    {
+			$$ = $1;
+		    }
+		    else
+		    {
+			yyerror("not inttype");
+			$$ = NULL;
+		    }
 
 		}
 ;
@@ -438,7 +447,7 @@ binary
 unary
 		: '(' expr ')' {
 		    if($2)
-			$$ = makeconstdecl($2);
+			declare(dummy, $$ = makeconstdecl($2));
 		    else
 			$$ = NULL;
 		}
@@ -449,13 +458,13 @@ unary
 			$$ = NULL;
 		}
 		| INTEGER_CONST {
-		    $$ = makenumconstdecl(inttype, $1);
+		    declare(dummy, $$ = makenumconstdecl(inttype, $1));
 		}
 		| CHAR_CONST {
-		    $$ = makecharconstdecl(chartype, $1);
+		    declare(dummy, $$ = makecharconstdecl(chartype, $1));
 		}
 		| STRING {
-		    $$ = makestringconstdecl(chartype, $1);
+		    declare(dummy, $$ = makestringconstdecl(chartype, $1));
 		}
 		| ID {
 		    if(finddecl($1))
@@ -508,7 +517,7 @@ unary
 		| '&' unary %prec '!' {
 		    if(check_is_var_type($2))
 		    {
-			$$ = makeconstdecl(makeptrdecl($2->type));
+			declare(dummy, $$ = makeconstdecl(makeptrdecl($2->type)));
 		    }
 		    else
 		    {
@@ -521,7 +530,7 @@ unary
 		| '*' unary %prec '!' {
 		    if(check_is_var_type($2) && check_is_ptr_type($2->type))
 		    {
-			$$ = makevardecl($2->type->ptrto);
+			declare(dummy, $$ = makevardecl($2->type->ptrto));
 		    }
 		    else
 		    {
@@ -569,10 +578,18 @@ unary
 		    if(check_is_proc($1))
 		    {
 			$$ = check_function_call($1, $3);
+			//must delete args
 		    }
 		    else
 		    {	
 			$$ = NULL;
+		    }
+
+		    struct decl *temp = $3;
+		    while(temp)
+		    {
+			free(temp);
+			temp = temp->next;
 		    }
 		}
 		| unary '(' ')' {
@@ -633,6 +650,7 @@ void init_type()
     declare(enter(TYPE, "char", 4), chartype);
     declare(enter(VOID, "void", 4), voidtype);
     returnid = enter(ID, "*return", 7);
+    dummy = enter(ID, "*dummy", 6);
 }
 
 struct ste *push_scope()	/* SStack.TOP에다가 새로히 ScopeNode를 만들고 연결 시킨다. */
@@ -1234,7 +1252,7 @@ struct decl *check_is_declared_for_else(struct id *entry)
 	if(temp->name == entry)
 	{
 	    yyerror("redeclaration");
-	    return NULL;
+	    return temp->decl;
 	}
 	temp = temp->prev;
     } 

@@ -118,6 +118,7 @@ struct decl *inttype;
 struct decl *chartype;
 struct decl *voidtype;
 struct id* returnid;
+struct id* dummy;	//중간중간 만들어 놓은 struct들을 지우기 위해
 char *filename;
 
 unsigned int Hash(const char *key);	//VAR ptr array struct CONST FUNC
