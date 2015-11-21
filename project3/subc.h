@@ -36,6 +36,8 @@ struct ScopeStack{
 struct ste *push_scope();
 struct ste *push_ste_list(struct ste *formals);
 struct ste *pop_scope();
+struct ste *free_scope();
+struct ste *free_ste_list(struct ste *steptr);
 struct ste *insert(id *entry, struct decl *declptr);
 
 struct decl{
@@ -47,6 +49,7 @@ struct decl{
 //    float	    real_value;	/* CONST: value of float const		*/
     struct ste	    *formals;	/* FUNC: ptr to formals list		*/
     struct decl	    *returntype;/* FUNC: ptr to return TYPE decl	*/
+    int		    isdeclared;	/* FUNC: isdeclared			*/
     int		    typeclass;	/* TYPE: type class: int, array, ptr	*/
     struct decl	    *elementvar;/* TYPE(array): ptr to element VAR decl	*/
     int		    num_index;	/* TYPE(array): number of elements	*/

@@ -18,7 +18,7 @@ void    REDUCE(char* s);
 	struct decl *declptr;
 	struct ste  *steptr;
 }
- %type<declptr>	    ext_def type_specifier struct_specifier func_decl pointers param_list param_decl def_list def compound_stmt local_defs expr_e expr or_expr or_list and_expr and_list binary unary args
+ %type<declptr>	    ext_def type_specifier struct_specifier func_decl pointers param_list param_decl def_list def compound_stmt local_defs expr_e expr or_expr or_list and_expr and_list binary unary args const_expr
 
 %nonassoc<idptr>    ID TYPE VOID
 /* Precedences and Associativities */
@@ -76,7 +76,7 @@ ext_def
 		| type_specifier pointers ID '[' const_expr ']' ';' {
 		    if($1 && !check_is_declared_for_else($3))
 		    {
-			declare($3, makeconstdecl(makearraydecl($<intVal>5, makevardecl($2? $2:$1))));
+			declare($3, makeconstdecl(makearraydecl($5->intvalue, makevardecl($2? $2:$1))));
 		    }
 		    else
 		    {
@@ -94,6 +94,8 @@ ext_def
 		}
 		    compound_stmt {
 		    pop_scope();
+		    if($1)
+			$1->isdeclared = 1;
 		}
 ;
 
@@ -172,42 +174,33 @@ struct_specifier
 ;
 
 func_decl
-		: type_specifier pointers ID '(' {
+		: type_specifier pointers ID '(' ')' {
 		    struct decl *procdecl = makeprocdecl();
-		    $<declptr>4 = check_is_declared_for_else($3);
 		    push_scope();
 		    declare(returnid, $2? $2:$1);
-		    $<declptr>$ = procdecl;
-		} ')' {
 		    struct ste *formals;
-		    struct decl *procdecl = $<declptr>5;
 		    formals = pop_scope();
 		    procdecl->returntype = formals->decl;
 		    procdecl->formals = formals;
-		    if(!$<declptr>4)
+		    if(!check_is_declared_for_else($3))
 		    {
 			$$ = procdecl;
-			declare($3, procdecl);
+			declare($3, $$);
 		    }
 		    else
 		    {
 			$$ = NULL;
 		    }
 		}
-		| type_specifier pointers ID '(' {
+		| type_specifier pointers ID '(' VOID ')' {
 		    struct decl *procdecl = makeprocdecl();
-		    $<declptr>4 = check_is_declared_for_else($3);
 		    push_scope();
 		    declare(returnid, $2? $2:$1);
-		    $<declptr>$ = procdecl;
-		}
-		    VOID ')' {
 		    struct ste *formals;
-		    struct decl *procdecl = $<declptr>5;
 		    formals = pop_scope();
 		    procdecl->returntype = formals->decl;
 		    procdecl->formals = formals;
-		    if(!$<declptr>4)
+		    if(!check_is_declared_for_else($3))
 		    {
 			$$ = procdecl;
 			declare($3, $$);
@@ -263,7 +256,7 @@ param_decl  /* formal parameter declaration */
 		    declare($3, makevardecl($2? $2:$1));
 		}
 		| type_specifier pointers ID '[' const_expr ']' {
-		    declare($3, makeconstdecl(makearraydecl($<intVal>5, makevardecl($2? $2:$1))));
+		    declare($3, makeconstdecl(makearraydecl($5->intvalue, makevardecl($2? $2:$1))));
 		}
 ;
 def_list    /* list of definitions, definition can be type(struct), variable, function */
@@ -286,7 +279,7 @@ def
 		| type_specifier pointers ID '[' const_expr ']' ';' {
 		    if($1 && !check_is_declared_for_else($3))
 		    {
-			declare($3, makeconstdecl(makearraydecl($<intVal>5, makevardecl($2? $2:$1))));
+			declare($3, makeconstdecl(makearraydecl($5->intvalue, makevardecl($2? $2:$1))));
 		    }
 		    else
 		    {
@@ -654,6 +647,40 @@ struct ste *pop_scope()		/* 현재 SStack.TOP->prev가 가르키는 ste까지 �
     return Head;
 }
 
+struct ste *free_scope()    //function이 끝나고 ste를 전부 free시키는 함수
+{
+    struct ste *temp = SStack.TOP->top;
+    struct ste *temp3 = SStack.TOP->prev->top;
+
+    if(temp == temp3)
+    {
+	free(SStack.TOP);
+	SStack.TOP = SStack.TOP->prev;
+	return NULL;
+    }
+
+    while(temp != temp3)
+    {
+	free(temp);
+	temp = temp->prev;
+    }
+
+    free(SStack.TOP);
+    SStack.TOP = SStack.TOP->prev;
+    return NULL;
+}
+
+struct ste *free_ste_list(struct ste *steptr)
+{
+    struct ste *temp = steptr;
+    while(temp)
+    {
+	free(temp);
+	temp = temp->prev;
+    }
+    return NULL;
+}
+
 struct ste *insert(id *entry, struct decl *declptr)	/* declare와 똑같은 함수 이다. */
 {
     struct ste *STE = (struct ste*)malloc(sizeof(struct ste));
@@ -761,6 +788,7 @@ struct decl *makeprocdecl()
 {
     struct decl *temp = (struct decl*)malloc(sizeof(struct decl));
     temp->declclass = Hash("FUNC");
+    temp->isdeclared = 0;
     return temp;
 }
 
@@ -1153,6 +1181,13 @@ struct decl *check_is_declared_for_else(struct id *entry)
     {
 	if(temp->name == entry)
 	{
+	    if(temp->decl->declclass == Hash("FUNC"))
+	    {
+		if(!temp->decl->isdeclared)
+		{
+		    return NULL;
+		}
+	    }
 	    yyerror("redeclaration");
 	    return temp->decl;
 	}
