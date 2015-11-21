@@ -322,7 +322,8 @@ stmt
 		    check_compatible(finddecl(returnid), voidtype);
 		}
 		| RETURN expr ';' {
-		    check_compatible(finddecl(returnid), $2);
+		    if($2)
+			check_compatible(finddecl(returnid), $2->type);
 		}
 		| ';' {
 		}
@@ -343,16 +344,16 @@ const_expr
 ;
 expr
 		: unary '=' expr {
-		    if(check_is_var_type($1))
+		    if($3 && check_is_var_type($1))
 		    {
-			if(check_compatible($1->type, $3))
+			if(check_compatible($1->type, $3->type))
 			{
-			    $$ = $1->type;
+			    $$ = $1;
 			}
 			else
 			{
-			    yyerror("not compatible");
 			    $$ = NULL;
+			    yyerror("not compatible");
 			}
 		    }
 		    else
@@ -365,7 +366,7 @@ or_expr
 ;
 or_list
 		: or_list LOGICAL_OR and_expr {
-		    if(check_compatible_type($1, inttype) && check_compatible_type($3, inttype))
+		    if($1 && $3 && check_compatible_type($1->type, inttype) && check_compatible_type($3->type, inttype))
 		    {
 			$$ = $1;
 		    }
@@ -381,7 +382,7 @@ and_expr
 ;
 and_list
 		: and_list LOGICAL_AND binary {
-		    if(check_compatible_type($1, inttype) && check_compatible_type($3, inttype))
+		    if($1 && $3 && check_compatible_type($1->type, inttype) && check_compatible_type($3->type, inttype))
 		    {
 			$$ = $1;
 		    }
@@ -394,20 +395,40 @@ and_list
 ;
 binary
 		: binary RELOP binary {
-		    $$ = reloptype($1, $3);
+		    if($1 && $3 && reloptype($1->type, $3->type))
+		    {
+			$$ = $1;
+		    }
+		    else
+			$$ = NULL;
 		}
 		| binary EQUOP binary {
-		    $$ = equoptype($1, $3);
+		    if($1 && $3 && equoptype($1->type, $3->type))
+		    {
+			$$ = $1;
+		    }
+		    else
+			$$ = NULL;
 		}
 		| binary '+' binary {
-		    $$ = plustype($1, $3);
+		    if($1 && $3 && plustype($1->type, $3->type))
+		    {
+			$$ = $1;
+		    }
+		    else
+			$$ = NULL;
 		}
 		| binary '-' binary {
-		    $$ = minustype($1, $3);
+		    if($1 && $3 && minustype($1->type, $3->type))
+		    {
+			$$ = $1;
+		    }
+		    else
+			$$ = NULL;
 		}
 		| unary %prec '=' {
 		    if($1)
-			$$ = $1->type;
+			$$ = $1;
 		    else 
 			$$ = NULL;
 		}
@@ -415,7 +436,7 @@ binary
 unary
 		: '(' expr ')' {
 		    if($2)
-			$$ = makeconstdecl($2);
+			$$ = $2;
 		    else
 			$$ = NULL;
 		}
@@ -447,7 +468,7 @@ unary
 		    }
 		}
 		| '-' unary %prec '!' {
-		    if(check_compatible_type($2->type, inttype))
+		    if($2 && check_compatible_type($2->type, inttype))
 		    {
 			$$ = $2;
 		    }
@@ -455,7 +476,7 @@ unary
 			$$ = NULL;
 		}
 		| '!' unary {
-		    if(check_compatible_type($2->type, inttype))
+		    if($2 && check_compatible_type($2->type, inttype))
 		    {
 			$$ = $2;
 		    }
@@ -463,21 +484,21 @@ unary
 			$$ = NULL;
 		}
 		| unary INCOP {
-		    if(!INDECOPtype($1->type))
+		    if($1 && !INDECOPtype($1->type))
 			$$ = NULL;
 		}
 		| unary DECOP {
-		    if(!INDECOPtype($1->type))
+		    if($1 && !INDECOPtype($1->type))
 			$$ = NULL;
 		}
 		| INCOP unary {
-		    if(!INDECOPtype($2->type))
+		    if($2 && !INDECOPtype($2->type))
 			$$ = NULL;
 		    else
 			$$ = $2;
 		}
 		| DECOP unary {
-		    if(!INDECOPtype($2->type))
+		    if($2 && !INDECOPtype($2->type))
 			$$ = NULL;
 		    else
 			$$ = $2;
@@ -505,9 +526,9 @@ unary
 		    }
 		}
 		| unary '[' expr ']' {
-		    if(check_is_const_type($1))
+		    if($3 && check_is_const_type($1))
 		    {
-			$$ = arrayaccess($1, $3);
+			$$ = arrayaccess($1, $3->type);
 		    }
 		    else
 		    {
@@ -535,7 +556,7 @@ unary
 		    }
 		}
 		| unary '(' args ')'{
-		    if(check_is_proc($1))
+		    if($3 && check_is_proc($1))
 		    {
 			$$ = check_function_call($1, $3);
 		    }
@@ -557,12 +578,12 @@ unary
 ;
 args    /* actual parameters(function arguments) transferred to function */
 		: expr {
-		    $$ = makevardecl($1);
+		    $$ = $1;
 		    $$->next = NULL;
 		}
 		| expr ',' args {
-		    $$ = makevardecl($1);
-		    $$->next = $3;
+		    $1->next = $3;
+		    $$ = $1;
 		}
 ;
 %%

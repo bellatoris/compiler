@@ -14,6 +14,14 @@ void func3(int *a, int b) {
 	c = a + b;
 }
 
+void func4(int a, int b, int *c, int d)
+{
+}
+
+void func5(int a, int c)
+{
+}
+
 int main(void) {
 	int a;
 	char b;
@@ -35,6 +43,10 @@ int main(void) {
 
 	d = func1(a, b); /* error */
 	c = func3(&c, d); /* error */
+
+	func4(a,a,&a,a);
+
+	func5(a, a);
 
 	return 0;
 }
