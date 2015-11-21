@@ -13,7 +13,7 @@ int main(void) {
 	b = &a;		/* error */
 	b = &a[10];
 	b = &b;		/* error */
-	b = &*(a+5);/* error */
+	b = &*(a+5);	/* error */
 	b = &(b++);	/* error */
 	b = &*(b++);
 

@@ -74,7 +74,7 @@ ext_def
 		    }
 		}
 		| type_specifier pointers ID '[' const_expr ']' ';' {
-		    if($1 && !check_is_declared_for_else($3))
+		    if($1 && $5 && !check_is_declared_for_else($3))
 		    {
 			declare($3, makeconstdecl(makearraydecl($5->intvalue, makevardecl($2? $2:$1))));
 		    }
@@ -253,10 +253,24 @@ param_list  /* list of formal parameter declaration */
 ;
 param_decl  /* formal parameter declaration */
 		: type_specifier pointers ID {
-		    declare($3, makevardecl($2? $2:$1));
+		    if($1 && !check_is_declared_for_else($3))
+		    {
+			declare($3, makevardecl($2? $2:$1));
+		    }
+		    else
+		    {
+			$$ = NULL;
+		    }
 		}
 		| type_specifier pointers ID '[' const_expr ']' {
-		    declare($3, makeconstdecl(makearraydecl($5->intvalue, makevardecl($2? $2:$1))));
+		    if($1 && $5 && !check_is_declared_for_else($3))
+		    {
+			declare($3, makeconstdecl(makearraydecl($5->intvalue, makevardecl($2? $2:$1))));
+		    }
+		    else
+		    {
+			$$ = NULL;
+		    }
 		}
 ;
 def_list    /* list of definitions, definition can be type(struct), variable, function */
@@ -277,7 +291,7 @@ def
 		    }
 		}
 		| type_specifier pointers ID '[' const_expr ']' ';' {
-		    if($1 && !check_is_declared_for_else($3))
+		    if($1 && $5 && !check_is_declared_for_else($3))
 		    {
 			declare($3, makeconstdecl(makearraydecl($5->intvalue, makevardecl($2? $2:$1))));
 		    }
@@ -319,10 +333,12 @@ stmt
 		| compound_stmt {
 		}
 		| RETURN ';' {
-		    check_compatible(finddecl(returnid), voidtype);
+		   if(!check_compatible(finddecl(returnid), voidtype))
+			yyerror("not compatible");
 		}
 		| RETURN expr ';' {
-		    check_compatible(finddecl(returnid), $2);
+		    if(!check_compatible(finddecl(returnid), $2))
+			yyerror("not compatible");
 		}
 		| ';' {
 		}
@@ -339,7 +355,9 @@ expr_e
 		}
 ;
 const_expr
-		: expr
+		: expr {
+
+		}
 ;
 expr
 		: unary '=' expr {
@@ -351,12 +369,17 @@ expr
 			}
 			else
 			{
-			    yyerror("not compatible");
+			    if($3)
+				yyerror("not compatible");
 			    $$ = NULL;
 			}
 		    }
 		    else
+		    {
+			if($1)
+			    yyerror("not variable");
 			$$ = NULL;
+		    }
 		}
 		| or_expr
 ;
@@ -490,6 +513,8 @@ unary
 		    else
 		    {
 			//error
+			if($2)
+			    yyerror("not variable");
 			$$ = NULL;
 		    }
 		}
@@ -501,6 +526,8 @@ unary
 		    else
 		    {
 			//error
+			if($2)
+			    yyerror("not variable");
 			$$ = NULL;
 		    }
 		}
@@ -521,6 +548,8 @@ unary
 		    }
 		    else
 		    {
+			if($1)
+			    yyerror("not variable");
 			$$ = NULL;
 		    }
 		}
@@ -531,6 +560,8 @@ unary
 		    }
 		    else
 		    {
+			if($2)
+			    yyerror("not variable");
 			$$ = NULL;
 		    }
 		}
@@ -1002,7 +1033,7 @@ struct decl *check_is_var_type(struct decl *declptr)
     else
     {
 	//error
-	yyerror("not variable");
+	//yyerror("not variable");
         return NULL;
     }
 }
