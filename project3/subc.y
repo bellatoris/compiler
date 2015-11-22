@@ -93,7 +93,7 @@ ext_def
 			push_ste_list($1->formals);
 		}
 		    compound_stmt {
-		    pop_scope();
+		    free_scope();
 		    if($1)
 			$1->isdeclared = 1;
 		}
@@ -134,19 +134,16 @@ struct_specifier
 		    $<declptr>$ = check_is_declared_for_struct($2);
 		    push_scope();
 		}		    
-		    def_list /* popscope reverses stes */{
+		    def_list '}' /* popscope reverses stes */{
 		    struct ste *fields = pop_scope();
-		    $<steptr>$ = fields;
-		}
-		    '}'
-		{
 		    if(!$<declptr>4)
 		    {
-			pushStr($2, $$ = makestructdecl($<steptr>6));
+			pushStr($2, $$ = makestructdecl(fields));
 		    }
 		    else
 		    {
 			//error
+			free_ste_list(fields);
 			$$ = NULL;
 		    }
 		}
@@ -189,6 +186,8 @@ func_decl
 		    }
 		    else
 		    {
+			free(procdecl);
+			free_ste_list(formals);
 			$$ = NULL;
 		    }
 		}
@@ -207,6 +206,8 @@ func_decl
 		    }
 		    else
 		    {
+			free(procdecl);
+			free_ste_list(formals);
 			$$ = NULL;
 		    }
 		}
@@ -223,7 +224,7 @@ func_decl
 		    /* pop_scope reverses stes(first one is the returnid) */
 		    procdecl->returntype = formals->decl; /* No for type checking */
 		    procdecl->formals = formals;	// must check again
-		    if(!$<declptr>4)
+		    if(!$<declptr>4 && $6)
 		    {
 			$$ = procdecl;
 			declare($3, $$);
@@ -232,6 +233,8 @@ func_decl
 		    //pushstelist(formals); 
 		    else
 		    {
+			free(procdecl);
+			free_ste_list(formals);
 			$$ = NULL;
 		    }
 		}
@@ -239,7 +242,10 @@ func_decl
 
 pointers
 		: '*' {
-		    $$ = makeptrdecl($<declptr>0);
+		    if($<declptr>0)
+			$$ = makeptrdecl($<declptr>0);
+		    else
+			$$ = NULL;
 		}
 		| /* empty */ {
 		    $$ = NULL;
@@ -247,8 +253,16 @@ pointers
 ;
 param_list  /* list of formal parameter declaration */
 		: param_decl {
+		    if($1)
+			$$ = $1;
+		    else
+			$$ = NULL;
 		}
 		| param_list ',' param_decl {
+		    if($1 && $3)
+			$$ = $1;
+		    else
+			$$ = NULL;
 		}
 ;
 param_decl  /* formal parameter declaration */
@@ -365,7 +379,6 @@ const_expr
 			yyerror("not inttype");
 			$$ = NULL;
 		    }
-
 		}
 ;
 expr
@@ -662,12 +675,32 @@ struct ste *push_scope()	/* SStack.TOP에다가 새로히 ScopeNode를 만들고
     return SStack.TOP->top;
 }
 
-struct ste *push_ste_list(struct ste *formals)
+struct ste *push_ste_list(struct ste *formals)	//완벽한 deep copy를 해준다.
 {
     struct ste *ftemp = formals;
     while(ftemp)
     {
-	declare(ftemp->name, ftemp->decl);
+	if(ftemp->decl->declclass == TYPE)  //returnid의 경우 decl이 바로 TYPE을 가리키므로 ftemp->decl을 바로 사용한다.
+	    declare(ftemp->name, ftemp->decl);
+	else if(ftemp->decl->type->typeclass == Hash("array")) //array의 경우 pointer array일 경우와 그 외의 경우로 나눠서 deepcopy한다.
+	{
+	    if(ftemp->decl->type->elementvar->type->typeclass == Hash("ptr"))
+	    {
+		declare(ftemp->name, makeconstdecl(makearraydecl(ftemp->decl->type->intvalue, makevardecl(makeptrdecl(ftemp->decl->type->elementvar->type->ptrto)))));
+	    }
+	    else
+	    {
+		declare(ftemp->name, makeconstdecl(makearraydecl(ftemp->decl->type->intvalue, makevardecl(ftemp->decl->type->elementvar->type))));
+	    }
+	}
+	else if(ftemp->decl->type->typeclass == Hash("ptr")) //pointer의 경우 ptrto를 사용해서 deepcopy한다.
+	{
+	    declare(ftemp->name, makevardecl(makeptrdecl(ftemp->decl->type->ptrto)));
+	}
+	else	//그 외의 경우 그냥 decl->type을 사용해서 deepcopy한다.
+	{
+	    declare(ftemp->name, makevardecl(ftemp->decl->type));
+	}
 	ftemp = ftemp->prev;
     }
     return SStack.TOP->top;
@@ -713,7 +746,7 @@ struct ste *free_scope()    //function이 끝나고 ste를 전부 free시키는 
 
     while(temp != temp3)
     {
-	free(temp);
+	free_ste(temp);
 	temp = temp->prev;
     }
 
@@ -727,7 +760,7 @@ struct ste *free_ste_list(struct ste *steptr)
     struct ste *temp = steptr;
     while(temp)
     {
-	free(temp);
+	free_ste(temp);
 	temp = temp->prev;
     }
     return NULL;
@@ -743,7 +776,59 @@ struct ste *insert(id *entry, struct decl *declptr)	/* declare와 똑같은 함�
     return SStack.TOP->top;
 }
 
+struct ste *free_ste(struct ste *steptr)
+{
+    free_decl(steptr->decl);	//ste를 해제하고 그 decl도 해제한다.
+    free(steptr);
+    return NULL;
+}
 
+struct decl *free_decl(struct decl *declptr)
+{
+    if(declptr->declclass == TYPE)  //declclass == TYPE이면 해제 하지 않는다.
+    {
+	if(declptr->typeclass == Hash("array"))	//다만 array나 pointer면 해제한다.
+	{
+	    free(declptr);
+	    free_decl(declptr->elementvar);
+	}
+	else if(declptr->typeclass == Hash("ptr"))
+	{
+	    free(declptr);
+	}
+	return NULL;
+    }
+    else
+    {
+	free(declptr);
+	free_decl(declptr->type);
+    }
+    return NULL;
+}
+
+struct ste *sdestroy()
+{
+    while(SStack.TOP->top)
+    {
+	free(SStack.TOP->top);
+	SStack.TOP->top = SStack.TOP->top->prev;
+    }
+
+    while(SStack.TOP)
+    {
+	free(SStack.TOP);
+	SStack.TOP = SStack.TOP->prev;
+    }
+
+    while(StrStack)
+    {
+	free(StrStack->decl->fieldlist);
+	free(StrStack);
+	StrStack = StrStack->prev;
+    }
+
+    return NULL;
+}
 
 
 

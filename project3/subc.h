@@ -35,10 +35,14 @@ struct ScopeStack{
 
 struct ste *push_scope();
 struct ste *push_ste_list(struct ste *formals);
+struct ste *deep_copy(struct decl *declptr);
 struct ste *pop_scope();
 struct ste *free_scope();
 struct ste *free_ste_list(struct ste *steptr);
 struct ste *insert(id *entry, struct decl *declptr);
+struct ste *free_ste(struct ste *steptr);
+struct decl *free_decl(struct decl *declptr);
+struct ste *sdestroy();
 
 struct decl{
     int		    declclass;  /* DECL Class: VAR, CONST, FUNC, TYPE	*/

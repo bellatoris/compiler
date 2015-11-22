@@ -1949,6 +1949,7 @@ int main(int argc, char* argv[])
 	
     yyparse();
     fclose(yyin);
+    sdestroy();
     hdestroy();
     return 0;
 }
