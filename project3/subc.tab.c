@@ -2710,8 +2710,8 @@ struct decl *free_decl(struct decl *declptr)
 		declptr->type->declclass = 0;
 		declptr->type->elementvar = NULL;
 		free(declptr->type);
-		declptr->type->typeclass = 0;
-		declptr->type->declclass = 0;
+		declptr->typeclass = 0;
+		declptr->declclass = 0;
 		declptr->type = NULL;
 		free(declptr);
 	    }
@@ -2722,8 +2722,8 @@ struct decl *free_decl(struct decl *declptr)
 	    declptr->type->declclass = 0;
 	    declptr->type->ptrto = NULL;
 	    free(declptr->type);
-	    declptr->type->typeclass = 0;
-	    declptr->type->declclass = 0;
+	    declptr->typeclass = 0;
+	    declptr->declclass = 0;
 	    declptr->type = NULL;
 	    free(declptr);
 	}
