@@ -67,7 +67,7 @@ ext_def
 		    if($1 && !check_is_declared_for_else($3))	//ID와 동일한 ste가 현재 scope에 있는지 확인
 		    {
 			declare($3, makevardecl($2? $2:$1)); 
-			//printStack(SStack.TOP->top);
+			printStack(SStack.TOP->top);
 		    }
 		    else
 		    {
@@ -191,7 +191,7 @@ func_decl
 		    else if(isdecl == inttype)
 		    {
 			struct decl *temp = finddecl($3);
-			if(!check_function_declare(temp, procdecl))
+			if(temp->formals->prev)
 			{
 			    $$ = NULL;
 			    yyerror("wrong declaration");
@@ -233,7 +233,7 @@ func_decl
 		    else if(isdecl == inttype)
 		    {
 			struct decl *temp = finddecl($3);
-			if(!check_function_declare(temp, procdecl))
+			if(temp->formals->prev)
 			{
 			    yyerror("wrong declarartion");
 			    $$ = NULL;
@@ -274,20 +274,13 @@ func_decl
 		    {
 			$$ = procdecl;
 			procdecl->elementvar = NULL;
+			//REDUCE($3->name);
+			//tellmetype(procdecl);
 			declare($3, $$);
 		    }
 		    else if(procdecl->elementvar == inttype && $6)
 		    {
 			struct decl *temp = finddecl($3);
-			if(check_function_declare(temp, procdecl))
-			{
-			    $$ = temp;
-			}
-			else
-			{
-			    yyerror("wrong declaration");
-			    $$ = NULL;
-			}
 			procdecl->formals = NULL;
 			procdecl->elementvar = NULL;
 			procdecl->returntype = NULL;
@@ -1019,8 +1012,7 @@ struct ste *sdestroy()
 
     while(StrStack)
     {
-	free_ste(StrStack->decl->fieldlist);
-	free(StrStack->decl);
+	free(StrStack->decl->fieldlist);
 	free(StrStack);
 	StrStack = StrStack->prev;
     }
@@ -1523,76 +1515,6 @@ struct decl *check_function_call(struct decl *procptr, struct decl *actuals)
     }
 
     return deep_copy(procptr->returntype);  /* for decl of the call */
-}
-
-struct decl *check_function_declare(struct decl *procptr, struct decl *procptr2)
-{
-    struct ste *formals = procptr->formals;
-    struct ste *actuals = procptr2->formals;
-    /* 1. compare number of formals and actuals */
-
-    /* 2. check for type match			*/
-    while(formals != NULL && actuals != NULL)
-    {
-	if(check_is_var_type(formals->decl))
-	{
-	    if(check_compatible(formals->decl->type, actuals->decl->type))
-	    {
-		if(formals->decl->type->typeclass == Hash("ptr") && actuals->decl->type->typeclass == Hash("array"))
-		{
-		    break;
-		} 
-		else
-		{
-		    formals = formals->prev;
-		    actuals = actuals->prev;
-		}
-	    }
-	    else
-	    {
-		break;
-	    }
-	}
-	else if(formals->name == returnid)
-	{
-	    if(formals->decl == actuals->decl)
-	    {
-		formals = formals->prev;
-		actuals = actuals->prev;
-	    }
-	    else if(formals->decl->typeclass == Hash("ptr") && formals->decl->ptrto == actuals->decl->ptrto)
-	    {
-		formals = formals->prev;
-		actuals = actuals->prev;
-	    }
-	    else
-	    {
-		break;
-	    }
-	}
-	else if(formals->decl->type->typeclass == Hash("array") && actuals->decl->type->typeclass == Hash("array"))
-	{
-	    if(check_compatible(formals->decl->type->elementvar->type, actuals->decl->type->elementvar->type))
-	    {
-		formals = formals->prev;
-		actuals = actuals->prev;
-	    }
-	    else
-	    {
-		break;
-	    }
-	}
-	else
-	{
-	    break;
-	}
-    }
-    if(formals || actuals)
-    {
-	return NULL;
-    }
-
-    return (procptr->returntype);  /* for decl of the call */
 }
 
 struct decl *check_is_proc(struct decl *procptr)

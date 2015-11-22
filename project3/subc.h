@@ -114,6 +114,7 @@ struct decl *check_is_array_type(struct decl *arrayptr);
 struct decl *check_is_ptr_type(struct decl *ptrptr);
 struct decl *check_is_type(struct decl *declptr);
 struct decl *check_function_call(struct decl *procptr, struct decl *actuals);
+struct decl *check_function_declare(struct decl *procptr, struct decl *proptr2);
 struct decl *check_is_proc(struct decl *procptr);
 struct decl *check_is_declared_for_else(struct id *entry);  //entry를 가진 ste가 현재 stack scope에 있는지 확인 한다. Declare 할 때 필요하다.
 struct decl *check_is_declared_for_struct(struct id *entry);	//entry를 가진 ste가 전체 struct scope에 있는지 확인 한다. Struct를 Declare 할 때 필요하다.
