@@ -26,6 +26,7 @@ struct ste{
 
 struct ScopeNode{
     struct ste *top;
+    struct ste *garbage_top;
     struct ScopeNode *prev;
 }ScopeNode;
 
@@ -40,6 +41,7 @@ struct ste *pop_scope();
 struct ste *free_scope();
 struct ste *free_ste_list(struct ste *steptr);
 struct ste *insert(id *entry, struct decl *declptr);
+struct ste *garbage_insert(struct decl *declptr);
 struct ste *free_ste(struct ste *steptr);
 struct decl *free_decl(struct decl *declptr);
 struct ste *sdestroy();

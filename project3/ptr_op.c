@@ -5,10 +5,13 @@ int main(void) {
 	int *b;
 	char c[20];
 	char *d;
+	int e;
 
 	a = b;		/* error */
 	a[0] = 0;
 	c[5] = 'a';
+	*e = 3;		/* error */
+	*3 = 3;		/* error */
 
 	b = &a;		/* error */
 	b = &a[10];

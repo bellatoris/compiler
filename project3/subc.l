@@ -138,6 +138,7 @@ int main(int argc, char* argv[])
 	
     yyparse();
     fclose(yyin);
+//    printStack(SStack.TOP->top);
     sdestroy();
     hdestroy();
     return 0;

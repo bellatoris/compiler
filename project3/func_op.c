@@ -18,13 +18,19 @@ void func4(int a, int b, int *c, int d)
 {
 }
 
-void func5(int a, int c)
+void func5(int a, int c, int d[10], int *j[10])
+{
+}
+
+void func6(int d[10])
 {
 }
 
 int main(void) {
 	int a;
 	char b;
+	int k[10];
+	int *kk[10];
 
 	int c;
 	char d;
@@ -46,7 +52,9 @@ int main(void) {
 
 	func4(a,a,&a,a);
 
-	func5(a, a);
+	func5(a, a, k, kk);
+
+	func6(k);
 
 	return 0;
 }

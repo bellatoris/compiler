@@ -93,7 +93,7 @@ ext_def
 			push_ste_list($1->formals);
 		}
 		    compound_stmt {
-		    free_scope();
+		    pop_scope();
 		    if($1)
 			$1->isdeclared = 1;
 		}
@@ -213,7 +213,8 @@ func_decl
 		}
 		| type_specifier pointers ID '(' {
 		    struct decl *procdecl = makeprocdecl();
-		    $<declptr>4 = check_is_declared_for_else($3);
+		    //tellmetype(procdecl);
+		    procdecl->elementvar = check_is_declared_for_else($3);
 		    push_scope();
 		    declare(returnid, $2? $2:$1);
 		    $<declptr>$ = procdecl;
@@ -224,9 +225,12 @@ func_decl
 		    /* pop_scope reverses stes(first one is the returnid) */
 		    procdecl->returntype = formals->decl; /* No for type checking */
 		    procdecl->formals = formals;	// must check again
-		    if(!$<declptr>4 && $6)
+		    if(!(procdecl->elementvar) && $6)
 		    {
 			$$ = procdecl;
+			procdecl->elementvar = NULL;
+			//REDUCE($3->name);
+			//tellmetype(procdecl);
 			declare($3, $$);
 		    }
 		    //push_scope(); /* for installing formals & locals in this scope */
@@ -269,7 +273,7 @@ param_decl  /* formal parameter declaration */
 		: type_specifier pointers ID {
 		    if($1 && !check_is_declared_for_else($3))
 		    {
-			declare($3, makevardecl($2? $2:$1));
+			declare($3, $$ = makevardecl($2? $2:$1));
 		    }
 		    else
 		    {
@@ -279,7 +283,7 @@ param_decl  /* formal parameter declaration */
 		| type_specifier pointers ID '[' const_expr ']' {
 		    if($1 && $5 && !check_is_declared_for_else($3))
 		    {
-			declare($3, makeconstdecl(makearraydecl($5->intvalue, makevardecl($2? $2:$1))));
+			declare($3, $$ = makeconstdecl(makearraydecl($5->intvalue, makevardecl($2? $2:$1))));
 		    }
 		    else
 		    {
@@ -348,11 +352,11 @@ stmt
 		}
 		| RETURN ';' {
 		   if(!check_compatible(finddecl(returnid), voidtype))
-			yyerror("not compatible");
+			yyerror("return value is not return type");
 		}
 		| RETURN expr ';' {
 		    if(!check_compatible(finddecl(returnid), $2))
-			yyerror("not compatible");
+			yyerror("return value is not return type");
 		}
 		| ';' {
 		}
@@ -392,14 +396,14 @@ expr
 			else
 			{
 			    if($3)
-				yyerror("not compatible");
+				yyerror("LHS and RHS are not same type");
 			    $$ = NULL;
 			}
 		    }
 		    else
 		    {
 			if($1)
-			    yyerror("not variable");
+			    yyerror("LHS is not variable");
 			$$ = NULL;
 		    }
 		}
@@ -460,7 +464,7 @@ binary
 unary
 		: '(' expr ')' {
 		    if($2)
-			declare(dummy, $$ = makeconstdecl($2));
+			$$ = makeconstdecl($2);
 		    else
 			$$ = NULL;
 		}
@@ -471,13 +475,13 @@ unary
 			$$ = NULL;
 		}
 		| INTEGER_CONST {
-		    declare(dummy, $$ = makenumconstdecl(inttype, $1));
+		    $$ = makenumconstdecl(inttype, $1);
 		}
 		| CHAR_CONST {
-		    declare(dummy, $$ = makecharconstdecl(chartype, $1));
+		    $$ = makecharconstdecl(chartype, $1);
 		}
 		| STRING {
-		    declare(dummy, $$ = makestringconstdecl(chartype, $1));
+		    $$ = makestringconstdecl(chartype, $1);
 		}
 		| ID {
 		    if(finddecl($1))
@@ -492,7 +496,7 @@ unary
 		    }
 		}
 		| '-' unary %prec '!' {
-		    if(check_compatible_type($2->type, inttype))
+		    if($2 && check_compatible_type($2->type, inttype))
 		    {
 			$$ = $2;
 		    }
@@ -500,7 +504,7 @@ unary
 			$$ = NULL;
 		}
 		| '!' unary {
-		    if(check_compatible_type($2->type, inttype))
+		    if($2 && check_compatible_type($2->type, inttype))
 		    {
 			$$ = $2;
 		    }
@@ -508,21 +512,25 @@ unary
 			$$ = NULL;
 		}
 		| unary INCOP {
-		    if(!INDECOPtype($1->type))
+		    if($1 && !INDECOPtype($1->type))
 			$$ = NULL;
+		    else
+			$$ =$1;
 		}
 		| unary DECOP {
-		    if(!INDECOPtype($1->type))
+		    if($1 && !INDECOPtype($1->type))
 			$$ = NULL;
+		    else
+			$$ = $1;
 		}
 		| INCOP unary {
-		    if(!INDECOPtype($2->type))
+		    if($2 && !INDECOPtype($2->type))
 			$$ = NULL;
 		    else
 			$$ = $2;
 		}
 		| DECOP unary {
-		    if(!INDECOPtype($2->type))
+		    if($2 && !INDECOPtype($2->type))
 			$$ = NULL;
 		    else
 			$$ = $2;
@@ -530,25 +538,25 @@ unary
 		| '&' unary %prec '!' {
 		    if(check_is_var_type($2))
 		    {
-			declare(dummy, $$ = makeconstdecl(makeptrdecl($2->type)));
+			$$ = makeconstdecl(makeptrdecl($2->type));
 		    }
 		    else
 		    {
 			//error
 			if($2)
-			    yyerror("not variable");
+			    yyerror("not & operator type");
 			$$ = NULL;
 		    }
 		}
 		| '*' unary %prec '!' {
 		    if(check_is_var_type($2) && check_is_ptr_type($2->type))
 		    {
-			declare(dummy, $$ = makevardecl($2->type->ptrto));
+			$$ = makevardecl($2->type->ptrto);
 		    }
 		    else
 		    {
 			//error
-			if($2)
+			if(!check_is_var_type($2) && $2)
 			    yyerror("not variable");
 			$$ = NULL;
 		    }
@@ -763,6 +771,7 @@ struct ste *free_ste_list(struct ste *steptr)
 	free_ste(temp);
 	temp = temp->prev;
     }
+    
     return NULL;
 }
 
@@ -780,6 +789,8 @@ struct ste *free_ste(struct ste *steptr)
 {
     free_decl(steptr->decl);	//ste를 해제하고 그 decl도 해제한다.
     free(steptr);
+    steptr->decl = NULL;
+    steptr = NULL;
     return NULL;
 }
 
@@ -789,19 +800,23 @@ struct decl *free_decl(struct decl *declptr)
     {
 	if(declptr->typeclass == Hash("array"))	//다만 array나 pointer면 해제한다.
 	{
-	    free(declptr);
 	    free_decl(declptr->elementvar);
+	    free(declptr);
+	    declptr = NULL;
 	}
 	else if(declptr->typeclass == Hash("ptr"))
 	{
 	    free(declptr);
+	    declptr = NULL;
 	}
+	declptr = NULL;	    //해제는 안하지만 NULL 바꿔준다.
 	return NULL;
     }
     else
     {
-	free(declptr);
 	free_decl(declptr->type);
+	free(declptr);
+	declptr = NULL;
     }
     return NULL;
 }
@@ -933,7 +948,7 @@ struct decl *makeprocdecl()
 
 
 
-struct decl *finddecl(id *entry)	    /* entry에 해당하는 name을 가진 ste가 있는지 찾는다.*/
+struct decl *finddecl(id *entry)    /* entry에 해당하는 name을 가진 ste가 있는지 찾는다.*/
 {
     struct ste *temp = SStack.TOP->top;
     while(temp)
@@ -1033,7 +1048,7 @@ struct decl *plustype(struct decl *type1, struct decl *type2)
 {
     if(type1 == NULL || type2 == NULL)
     {
-	yyerror("type is not suitable for plus operaton");
+//	yyerror("type is not suitable for plus operaton");
 	return NULL;
     }
     else if(type1 == inttype && type2 == inttype)
@@ -1048,15 +1063,18 @@ struct decl *plustype(struct decl *type1, struct decl *type2)
     {
 	return type1;
     }
-    yyerror("type is not suitable for plus operaton");
-    return NULL;
+    else
+    {
+	yyerror("type is not suitable for plus operaton");
+	return NULL;
+    }
 }
 
 struct decl *minustype(struct decl *type1, struct decl *type2)
 {
     if(type1 == NULL || type2 == NULL)
     {
-	yyerror("type is not suitable for minus operaton");
+//	yyerror("type is not suitable for minus operaton");
 	return NULL;
     }
     else if(type1 == inttype && type2 == inttype)
@@ -1067,8 +1085,11 @@ struct decl *minustype(struct decl *type1, struct decl *type2)
     {
 	return type1;
     }
-    yyerror("type is not suitable for minus operaton");
-    return NULL;
+    else
+    {
+	yyerror("type is not suitable for minus operaton");
+	return NULL;
+    }
 }
 
 struct decl *reloptype(struct decl *type1, struct decl *type2)
@@ -1085,8 +1106,11 @@ struct decl *reloptype(struct decl *type1, struct decl *type2)
 	    return inttype;
 	}
     }
-    yyerror("type is not suitable for relop operaton");
-    return NULL;
+    else
+    {
+	yyerror("type is not suitable for relop operaton");
+	return NULL;
+    }
 }
     
 struct decl *equoptype(struct decl *type1, struct decl *type2)
@@ -1103,8 +1127,11 @@ struct decl *equoptype(struct decl *type1, struct decl *type2)
 	    return inttype;
 	}
     }
-    yyerror("type is not suitable for equop operaton");
-    return NULL;
+    else
+    {
+	yyerror("type is not suitable for equop operaton");
+	return NULL;
+    }
 }
 
 struct decl *INDECOPtype(struct decl *type)
@@ -1112,6 +1139,10 @@ struct decl *INDECOPtype(struct decl *type)
     if(type == inttype || type == chartype)
     {
 	return type;
+    }
+    else if(type == NULL)
+    {
+	return NULL;
     }
     else if(type->typeclass == Hash("ptr"))
     {
@@ -1277,6 +1308,18 @@ struct decl *check_function_call(struct decl *procptr, struct decl *actuals)
 		break;
 	    }
 	}
+	else if(formals->decl->type->typeclass == Hash("array") && actuals->type->typeclass == Hash("array"))
+	{
+	    if(check_compatible(formals->decl->type->elementvar->type, actuals->type->elementvar->type))
+	    {
+		formals = formals->prev;
+		actuals = actuals->next;
+	    }
+	    else
+	    {
+		break;
+	    }
+	}
 	else
 	{
 	    break;
@@ -1304,7 +1347,7 @@ struct decl *check_is_proc(struct decl *procptr)
     }
 }
 
-struct decl *check_is_declared_for_else(struct id *entry)
+struct decl *check_is_declared_for_else(struct id *entry) //variable을 선언하기 위해 동일한 entry를 name으로 가지는 ste가 있는지 찾는 함수 이다. struct scope와 현재 scope만 뒤진다. 
 {
     struct ste *temp = SStack.TOP->top;
     struct ste *temp2;
@@ -1318,7 +1361,7 @@ struct decl *check_is_declared_for_else(struct id *entry)
     {
 	if(temp->name == entry)
 	{
-	    if(temp->decl->declclass == Hash("FUNC"))
+	    if(temp->decl->declclass == Hash("FUNC")) //함수의 경우 선언 된적 있더라도 declared된적 없으면 declare할 수 있게 해준다.
 	    {
 		if(!temp->decl->isdeclared)
 		{
@@ -1344,7 +1387,7 @@ struct decl *check_is_declared_for_else(struct id *entry)
     return NULL;
 }
 
-struct decl *check_is_declared_for_struct(struct id *entry)
+struct decl *check_is_declared_for_struct(struct id *entry) //struct를 선언하기 위해 동일한 entry를 name으로 가지는 ste가 있는지 찾는 함수 이다. 전체 scope를 다 뒤진다. 
 {
     struct ste *temp = SStack.TOP->top;
     while(temp)
@@ -1447,32 +1490,38 @@ void tellmetype(struct decl *declptr)
 
     if(temp->type)
     {
+	REDUCE("look the type decl");
 	tellmetype(temp->type);
     }
     if(temp->returntype)
     {
+	REDUCE("look the returntype decl");
 	tellmetype(temp->returntype);
     }
     if(temp->elementvar)
     {
+	REDUCE("look the elmentvar decl");
 	tellmetype(temp->elementvar);
     }
     if(temp->ptrto)
     {
+	REDUCE("look the ptrto decl");
 	tellmetype(temp->ptrto);
     }
     if(temp->fieldlist)
     {
+	REDUCE("look the fieldlist");
 	printStack(temp->fieldlist);
     }
     if(temp->formals)
     {
+	REDUCE("look the formals");
 	printStack(temp->formals);
     }
     
 }
 
-struct ste *pushStr(struct id *entry, struct decl *declptr)
+struct ste *pushStr(struct id *entry, struct decl *declptr) //struct stack의 push 함수
 {
     struct ste *temp = StrStack;
     StrStack = (struct ste*)malloc(sizeof(struct ste));

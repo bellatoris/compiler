@@ -22,7 +22,7 @@ id* enter(int lextype, char* str, int length)
 	{
 		temp = (id*)malloc(sizeof(id)); 
 		temp->lextype = lextype;
-		temp->name = (char*)malloc(sizeof(char)*(length+1)); 
+		temp->name = (char*)malloc(sizeof(char)*(length)); 
 
 		strncpy(temp->name, str, length);           
 
