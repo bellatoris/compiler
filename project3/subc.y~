@@ -824,7 +824,6 @@ struct ste *free_scope()    //function이 끝나고 ste를 전부 free시키는 
 struct ste *free_ste_list(struct ste *steptr)
 {
     struct ste *temp = steptr;
-
     while(temp)
     {
 	free_ste(temp);
@@ -886,7 +885,7 @@ struct decl *free_decl(struct decl *declptr)
 		declptr->type->declclass = 0;
 		declptr->type->elementvar = NULL;
 		free(declptr->type);
-		declptr->typeclass = 0;
+		declptr->typeclass= 0;
 		declptr->declclass = 0;
 		declptr->type = NULL;
 		free(declptr);
@@ -901,9 +900,9 @@ struct decl *free_decl(struct decl *declptr)
 		declptr->type->declclass = 0;
 		declptr->type->elementvar = NULL;
 		free(declptr->type);
-		declptr->typeclass = 0;
-		declptr->declclass = 0;
-		declptr->type = NULL;
+		declptr->type->typeclass = 0;
+		declptr->type->declclass = 0;
+		declptr->type->elementvar = NULL;
 		free(declptr);
 	    }
 	}
@@ -913,8 +912,8 @@ struct decl *free_decl(struct decl *declptr)
 	    declptr->type->declclass = 0;
 	    declptr->type->ptrto = NULL;
 	    free(declptr->type);
-	    declptr->typeclass = 0;
-	    declptr->declclass = 0;
+	    declptr->type->typeclass = 0;
+	    declptr->type->declclass = 0;
 	    declptr->type = NULL;
 	    free(declptr);
 	}
@@ -928,10 +927,6 @@ struct decl *free_decl(struct decl *declptr)
     }
     else if(declptr->ptrto)
     {
-	declptr->typeclass = 0;
-	declptr->declclass = 0;
-	declptr->ptrto = NULL;
-	free(declptr);
     }
     return NULL;
 }

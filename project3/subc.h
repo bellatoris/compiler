@@ -26,7 +26,7 @@ struct ste{
 
 struct ScopeNode{
     struct ste *top;
-    struct ste *garbage_top;
+    struct ste *garbage_top;	//garbage ste
     struct ScopeNode *prev;
 }ScopeNode;
 
@@ -35,13 +35,13 @@ struct ScopeStack{
 }ScopeStack;
 
 struct ste *push_scope();
+struct decl *deep_copy(struct decl *declptr);
 struct ste *push_ste_list(struct ste *formals);
-struct ste *deep_copy(struct decl *declptr);
 struct ste *pop_scope();
 struct ste *free_scope();
 struct ste *free_ste_list(struct ste *steptr);
 struct ste *insert(id *entry, struct decl *declptr);
-struct ste *garbage_insert(struct decl *declptr);
+struct ste *garbage_insert( struct decl *declptr);   //중간중간 생기는 garbage들을 모으는 함수
 struct ste *free_ste(struct ste *steptr);
 struct decl *free_decl(struct decl *declptr);
 struct ste *sdestroy();
@@ -83,6 +83,7 @@ struct decl  *makenumconstdecl(struct decl *typeptr, int intconst);
 struct decl  *makecharconstdecl(struct decl *typetpr, char *charconst);
 struct decl  *makestringconstdecl(struct decl *typeptr, const char *stringconst); 
 struct decl  *makeprocdecl();
+struct decl  *makeshelldecl(struct decl *typeptr);
 
 
 struct decl  *finddecl(struct id* entry);   // entry를 가진 ste가 전체 stack scope에 있는지 확인 한다.해당하는 id가 존재하는지 확인 하려는 목적이다.
@@ -124,7 +125,6 @@ struct decl *inttype;
 struct decl *chartype;
 struct decl *voidtype;
 struct id* returnid;
-struct id* dummy;	//중간중간 만들어 놓은 struct들을 지우기 위해
 char *filename;
 
 unsigned int Hash(const char *key);	//VAR ptr array struct CONST FUNC
