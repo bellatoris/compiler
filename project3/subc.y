@@ -422,8 +422,7 @@ stmt
 		    if($2 && !check_compatible(finddecl(returnid), $2->type))
 			yyerror("return value is not return type");
 		}
-		| ';' {
-		}
+		| ';' 
 		| IF '(' expr ')' stmt %prec ELSE
 		| IF '(' expr ')' stmt ELSE stmt %prec ELSE 
 		| WHILE '(' expr ')' stmt 
@@ -686,7 +685,7 @@ unary
 		    else
 		    {
 			//error
-			if(!check_is_var_type($2) && $2)
+			if($2 && !check_is_var_type($2))
 			    yyerror("not variable");
 			$$ = NULL;
 		    }
