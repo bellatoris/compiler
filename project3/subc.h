@@ -36,6 +36,8 @@ struct ScopeStack{
 
 struct ste *push_scope();
 struct decl *deep_copy(struct decl *declptr);
+struct decl *deep_copy_pointer(struct decl *declptr);
+struct decl *deep_copy_variable(struct decl *declptr);
 struct ste *push_ste_list(struct ste *formals);
 struct ste *pop_scope();
 struct ste *free_scope();

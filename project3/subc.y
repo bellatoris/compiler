@@ -419,7 +419,7 @@ stmt
 			yyerror("return value is not return type");
 		}
 		| RETURN expr ';' {
-		    if(!check_compatible(finddecl(returnid), $2))
+		    if($2 && !check_compatible(finddecl(returnid), $2->type))
 			yyerror("return value is not return type");
 		}
 		| ';' {
@@ -438,7 +438,11 @@ expr_e
 ;
 const_expr
 		: expr {
-		    if(check_compatible_type($1, inttype))
+		    if(!$1)
+		    {
+			$$ = NULL;
+		    }
+		    else if(check_compatible_type($1->type, inttype))
 		    {
 			$$ = $1;
 		    }
@@ -451,23 +455,25 @@ const_expr
 ;
 expr
 		: unary '=' expr {
-		    if(check_is_var_type($1))
+		    if(!$1 || !$3)
 		    {
-			if(check_compatible($1->type, $3))
+			$$ = NULL;
+		    }
+		    else if(check_is_var_type($1))
+		    {
+			if(check_compatible($1->type, $3->type))
 			{
-			    $$ = $1->type;
+			    $$ = $1;
 			}
 			else
 			{
-			    if($3)
-				yyerror("LHS and RHS are not same type");
+			    yyerror("LHS and RHS are not same type");
 			    $$ = NULL;
 			}
 		    }
 		    else
 		    {
-			if($1)
-			    yyerror("LHS is not variable");
+			yyerror("LHS is not variable");
 			$$ = NULL;
 		    }
 		}
@@ -478,12 +484,17 @@ or_expr
 ;
 or_list
 		: or_list LOGICAL_OR and_expr {
-		    if(check_compatible_type($1, inttype) && check_compatible_type($3, inttype))
+		    if(!$1 || !$3)
+		    {
+			$$ = NULL;
+		    }
+		    else if(check_compatible_type($1->type, inttype) && check_compatible_type($3->type, inttype))
 		    {
 			$$ = $1;
 		    }
 		    else
 		    {
+			yyerror("not int type");
 			$$ = NULL;
 		    }
 		}
@@ -494,7 +505,57 @@ and_expr
 ;
 and_list
 		: and_list LOGICAL_AND binary {
-		    if(check_compatible_type($1, inttype) && check_compatible_type($3, inttype))
+		    if(!$1 || !$3)
+		    {
+			$$ = NULL;
+		    }
+		    if(check_compatible_type($1->type, inttype) && check_compatible_type($3->type, inttype))
+		    {
+			$$ = $1;
+		    }
+		    else
+		    {
+			yyerror("not int type");
+			$$ = NULL;
+		    }
+		}
+		| binary
+;
+binary
+		: binary RELOP binary {
+		    if(!$1 || !$3)
+		    {
+			$$ = NULL;
+		    }
+		    else if(reloptype($1->type, $3->type))
+		    {
+			garbage_insert($$ = makeconstdecl(inttype));
+		    }
+		    else
+		    {
+			$$ = NULL;
+		    }
+		}
+		| binary EQUOP binary {
+		    if(!$1 || !$3)
+		    {
+			$$ = NULL;
+		    }
+		    else if(equoptype($1->type, $3->type))
+		    {
+			garbage_insert($$ = makeconstdecl(inttype));
+		    }
+		    else
+		    {
+			$$ = NULL;
+		    }
+		}
+		| binary '+' binary {
+		    if(!$1 || !$3)
+		    {
+			$$ = NULL;
+		    }
+		    else if(plustype($1->type, $3->type))
 		    {
 			$$ = $1;
 		    }
@@ -503,32 +564,31 @@ and_list
 			$$ = NULL;
 		    }
 		}
-		| binary
-;
-binary
-		: binary RELOP binary {
-		    $$ = reloptype($1, $3);
-		}
-		| binary EQUOP binary {
-		    $$ = equoptype($1, $3);
-		}
-		| binary '+' binary {
-		    $$ = plustype($1, $3);
-		}
 		| binary '-' binary {
-		    $$ = minustype($1, $3);
+		    if(!$1 || !$3)
+		    {
+			$$ = NULL;
+		    }
+		    else if(minustype($1->type, $3->type))
+		    {
+			$$ = $1;
+		    }
+		    else
+		    { 
+			$$ = NULL;
+		    }
 		}
 		| unary %prec '=' {
 		    if($1)
-			$$ = $1->type;
+			$$ = $1;	//do not return decl->type
 		    else 
 			$$ = NULL;
 		}
 ;
 unary
 		: '(' expr ')' {
-		    if($2)
-			$$ = deep_copy($2);
+		    if($2)  // it made by const decl!!
+			$$ = deep_copy($2->type);
 		    else
 			$$ = NULL;
 		}
@@ -565,7 +625,10 @@ unary
 			$$ = $2;
 		    }
 		    else
+		    {
+			yyerror("not int type");
 			$$ = NULL;
+		    }
 		}
 		| '!' unary {
 		    if($2 && check_compatible_type($2->type, inttype))
@@ -573,7 +636,10 @@ unary
 			$$ = $2;
 		    }
 		    else
+		    {
+			yyerror("not int type");
 			$$ = NULL;
+		    }
 		}
 		| unary INCOP {
 		    if($1 && !INDECOPtype($1->type))
@@ -600,9 +666,9 @@ unary
 			$$ = $2;
 		}
 		| '&' unary %prec '!' {
-		    if(check_is_var_type($2))
-		    {
-			garbage_insert($$ = makeconstdecl(makeptrdecl($2->type)));
+		    if(check_is_var_type($2))	//i must check this again! must deep copy
+		    {	
+			garbage_insert($$ = makeconstdecl(deep_copy_pointer($2->type)));
 		    }
 		    else
 		    {
@@ -615,7 +681,7 @@ unary
 		| '*' unary %prec '!' {
 		    if(check_is_var_type($2) && check_is_ptr_type($2->type))
 		    {
-			garbage_insert($$ = makevardecl($2->type->ptrto));
+			garbage_insert($$ = deep_copy_variable($2->type->ptrto));
 		    }
 		    else
 		    {
@@ -626,9 +692,13 @@ unary
 		    }
 		}
 		| unary '[' expr ']' {
-		    if(check_is_const_type($1))
+		    if(!$1 || !$3)
 		    {
-			$$ = arrayaccess($1, $3);
+			$$ = NULL;
+		    }
+		    else if(check_is_const_type($1))
+		    {
+			$$ = arrayaccess($1, $3->type);
 		    }
 		    else
 		    {
@@ -654,28 +724,34 @@ unary
 		    }
 		    else
 		    {
-			if($2)
+			if($1)
 			    yyerror("not variable");
 			$$ = NULL;
 		    }
 		}
 		| unary '(' args ')'{
-		    if(check_is_proc($1))
+		    if(!$1 || !$3)
+		    {
+			$$ = NULL;
+		    }
+		    else if(check_is_proc($1))
 		    {
 			$$ = check_function_call($1, $3);
-			//must delete args
 		    }
 		    else
 		    {	
 			$$ = NULL;
 		    }
-
-		    struct decl *temp = $3;
-		    while(temp)
+		    
+		    if($3)
 		    {
-			free(temp);
-			temp = temp->next;
-		    }
+			struct decl *temp = $3;
+			while(temp)
+			{
+			    free(temp);
+			    temp = temp->next;
+			}
+		    }	
 		}
 		| unary '(' ')' {
 		    if(check_is_proc($1))
@@ -690,12 +766,26 @@ unary
 ;
 args    /* actual parameters(function arguments) transferred to function */
 		: expr {
-		    $$ = makevardecl($1);
-		    $$->next = NULL;
+		    if($1)
+		    {
+			$$ = makevardecl($1->type);
+			$$->next = NULL;
+		    }
+		    else
+		    {
+			$$ = NULL;
+		    }
 		}
 		| expr ',' args {
-		    $$ = makevardecl($1);
-		    $$->next = $3;
+		    if($1 && $3)
+		    {
+			$$ = makevardecl($1->type);
+			$$->next = $3;
+		    }
+		    else
+		    {
+			$$ = NULL;
+		    }
 		}
 ;
 %%
@@ -775,6 +865,63 @@ struct decl *deep_copy(struct decl *declptr)
     }
     return NULL;
 }
+
+struct decl *deep_copy_pointer(struct decl *declptr)
+{
+    struct decl *ftemp = declptr;
+    if(ftemp)
+    {
+	 if(ftemp->typeclass == Hash("array"))
+	{
+	    if(ftemp->elementvar->type->typeclass == Hash("ptr"))
+	    {
+		return makeptrdecl(makearraydecl(ftemp->intvalue, makevardecl(makeptrdecl(ftemp->elementvar->type->ptrto))));
+	    }
+	    else
+	    {
+		return makeptrdecl(makearraydecl(ftemp->intvalue, makevardecl(ftemp->elementvar->type)));
+	    }
+	}
+	else if(ftemp->typeclass == Hash("ptr"))
+	{
+	    return makeptrdecl(makeptrdecl(ftemp->ptrto));
+	}
+	else
+	{
+	    return makeptrdecl(ftemp);
+	}	
+    }
+    return NULL;
+}
+
+struct decl *deep_copy_variable(struct decl *declptr)
+{
+    struct decl *ftemp = declptr;
+    if(ftemp)
+    {
+	 if(ftemp->typeclass == Hash("array"))
+	{
+	    if(ftemp->elementvar->type->typeclass == Hash("ptr"))
+	    {
+		return makevardecl(makearraydecl(ftemp->intvalue, makevardecl(makeptrdecl(ftemp->elementvar->type->ptrto))));
+	    }
+	    else
+	    {
+		return makevardecl(makearraydecl(ftemp->intvalue, makevardecl(ftemp->elementvar->type)));
+	    }
+	}
+	else if(ftemp->typeclass == Hash("ptr"))
+	{
+	    return makevardecl(makeptrdecl(ftemp->ptrto));
+	}
+	else
+	{
+	    return makevardecl(ftemp);
+	}	
+    }
+    return NULL;
+}
+
 
 struct ste *push_ste_list(struct ste *formals)	//완벽한 deep copy를 해준다.
 {
@@ -1287,7 +1434,7 @@ struct decl *reloptype(struct decl *type1, struct decl *type2)
 {
     if(check_compatible_type(type1, type2))
     {
-	if(type1->typeclass == Hash("struct"))
+	if(type1->typeclass == Hash("struct") || type1->typeclass == Hash("array"))
 	{
 	    yyerror("type is not suitable for relop operaton");
 	    return NULL;
@@ -1308,7 +1455,7 @@ struct decl *equoptype(struct decl *type1, struct decl *type2)
 {
     if(check_compatible_type(type1, type2))
     {
-	if(type1->typeclass == Hash("struct"))
+	if(type1->typeclass == Hash("struct") || type1->typeclass == Hash("array"))
 	{
 	    yyerror("type is not suitable for equop operaton");
 	    return NULL;
