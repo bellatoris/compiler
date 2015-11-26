@@ -667,20 +667,32 @@ unary
 		| '&' unary %prec '!' {
 		    if(check_is_var_type($2))	//i must check this again! must deep copy
 		    {	
-			garbage_insert($$ = makeconstdecl(deep_copy_pointer($2->type)));
+			struct decl *temp;
+			if(temp = deep_copy_pointer($2->type))
+			{
+			    garbage_insert($$ = makeconstdecl(temp));
+			}
+			else
+			    $$ = NULL;
 		    }
 		    else
 		    {
 			//error
 			if($2)
-			    yyerror("not & operator type");
+			    yyerror("not variable");
 			$$ = NULL;
 		    }
 		}
 		| '*' unary %prec '!' {
 		    if(check_is_var_type($2) && check_is_ptr_type($2->type))
 		    {
-			garbage_insert($$ = deep_copy_variable($2->type->ptrto));
+			struct decl *temp;
+			if(temp = deep_copy_variable($2->type->ptrto))
+			{
+			    garbage_insert($$ = temp);
+			}
+			else
+			    $$ = NULL;
 		    }
 		    else
 		    {
@@ -872,18 +884,22 @@ struct decl *deep_copy_pointer(struct decl *declptr)
     {
 	 if(ftemp->typeclass == Hash("array"))
 	{
-	    if(ftemp->elementvar->type->typeclass == Hash("ptr"))
+	   /* if(ftemp->elementvar->type->typeclass == Hash("ptr"))
 	    {
 		return makeptrdecl(makearraydecl(ftemp->intvalue, makevardecl(makeptrdecl(ftemp->elementvar->type->ptrto))));
 	    }
 	    else
 	    {
 		return makeptrdecl(makearraydecl(ftemp->intvalue, makevardecl(ftemp->elementvar->type)));
-	    }
+	    }*/
+	    yyerror("not & operator type");
+	    return NULL;
 	}
 	else if(ftemp->typeclass == Hash("ptr"))
 	{
-	    return makeptrdecl(makeptrdecl(ftemp->ptrto));
+	   // return makeptrdecl(makeptrdecl(ftemp->ptrto));
+	    yyerror("not & operator type");
+	    return NULL;
 	}
 	else
 	{
@@ -900,18 +916,22 @@ struct decl *deep_copy_variable(struct decl *declptr)
     {
 	 if(ftemp->typeclass == Hash("array"))
 	{
-	    if(ftemp->elementvar->type->typeclass == Hash("ptr"))
+	   /* if(ftemp->elementvar->type->typeclass == Hash("ptr"))
 	    {
 		return makevardecl(makearraydecl(ftemp->intvalue, makevardecl(makeptrdecl(ftemp->elementvar->type->ptrto))));
 	    }
 	    else
 	    {
 		return makevardecl(makearraydecl(ftemp->intvalue, makevardecl(ftemp->elementvar->type)));
-	    }
+	    }*/
+	yyerror("not * operator type");
+	return NULL;
 	}
 	else if(ftemp->typeclass == Hash("ptr"))
 	{
-	    return makevardecl(makeptrdecl(ftemp->ptrto));
+	   // return makevardecl(makeptrdecl(ftemp->ptrto));
+	    yyerror("not * operator type");
+	    return NULL;
 	}
 	else
 	{
