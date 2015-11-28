@@ -1177,6 +1177,13 @@ struct ste *sdestroy()
 {
     while(SStack.TOP->top)
     {
+	if(SStack.TOP->top->decl->declclass == Hash("FUNC"))
+	{
+	    free_ste(SStack.TOP->top->decl->formals);
+	    free(SStack.TOP->top->decl);
+	}
+	if(SStack.TOP->top->decl->declclass == TYPE)
+	    free(SStack.TOP->top->decl);
 	free_ste(SStack.TOP->top);
 	SStack.TOP->top = SStack.TOP->top->prev;
     }
