@@ -18,7 +18,7 @@ void    REDUCE(char* s);
 	struct decl *declptr;
 	struct ste  *steptr;
 }
- %type<declptr>	    ext_def type_specifier struct_specifier func_decl pointers param_list param_decl def_list def compound_stmt local_defs expr_e expr or_expr or_list and_expr and_list binary unary args const_expr
+ %type<declptr>	    ext_def type_specifier struct_specifier func_decl pointers param_list param_decl def_list def local_defs expr_e expr or_expr or_list and_expr and_list binary unary args const_expr
 
 %nonassoc<idptr>    ID TYPE VOID
 /* Precedences and Associativities */
@@ -36,13 +36,14 @@ void    REDUCE(char* s);
 %right  '!' INCOP DECOP
 %left   '[' ']' '(' ')' '.' STRUCTOP
 
+
 /* Token and Types */
 %token		    STRUCT
 %token<stringVal>   CHAR_CONST STRING STRUCTOP
 %token<intVal>	    INTEGER_CONST
 %token		    RETURN
 %token              IF
-%token		    ELSE
+%token<stringVal>   ELSE
 %token              WHILE
 %token              FOR
 %token              BREAK
@@ -68,6 +69,7 @@ ext_def
 		    {
 			declare($3, makevardecl($2? $2:$1)); 
 			//printStack(SStack.TOP->top);
+			printStack(StrStack);
 		    }
 		    else
 		    {
@@ -108,7 +110,7 @@ type_specifier
 		    }
 		    else
 		    {
-			//error
+			//error	
 			$$ = NULL;
 		    }
 		}
@@ -392,13 +394,13 @@ compound_stmt
 		    if($<declptr>0 && $<declptr>0->declclass == Hash("FUNC"))
 		    {
 			push_ste_list($<declptr>0->formals);
-		    }
+		    } 
 		} local_defs stmt_list '}' {
 		    free_scope();
 		    if($<declptr>0 && $<declptr>0->declclass == Hash("FUNC"))
 		    {
 			$<declptr>0->isdeclared = 1;
-		    } 
+		    }
 		}
 ;
 local_defs  /* local definitions, of which scope is only inside of compound statement */
@@ -995,7 +997,7 @@ struct ste *pop_scope()		/* 현재 SStack.TOP->prev가 가르키는 ste까지 �
     {
 	free(SStack.TOP);
 	SStack.TOP = SStack.TOP->prev;
-	return temp;
+	return NULL;
     }
 
     while(temp != temp3)
@@ -1187,7 +1189,8 @@ struct ste *sdestroy()
 
     while(StrStack)
     {
-	free_ste(StrStack->decl->fieldlist);
+	if(StrStack->decl->fieldlist)
+	    free_ste(StrStack->decl->fieldlist);
 	free(StrStack->decl);
 	free(StrStack);
 	StrStack = StrStack->prev;

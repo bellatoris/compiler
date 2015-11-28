@@ -813,7 +813,8 @@ YY_RULE_SETUP
 #line 49 "subc.l"
 {
            //printf("%s\t", yytext);
-           return yytext[0]; 
+	    yylval.stringVal = yytext;
+	    return yytext[0]; 
         }
 	YY_BREAK
 /*"+="|"-="|"*="|"/="|"%=" {
@@ -822,7 +823,7 @@ YY_RULE_SETUP
         }*/
 case 6:
 YY_RULE_SETUP
-#line 59 "subc.l"
+#line 60 "subc.l"
 {
 		   yylval.stringVal = yytext;
 	       return LOGICAL_OR;
@@ -830,7 +831,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 64 "subc.l"
+#line 65 "subc.l"
 {
 		   yylval.stringVal = yytext;
 	       return LOGICAL_AND;
@@ -838,7 +839,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 68 "subc.l"
+#line 69 "subc.l"
 {
 		   yylval.stringVal = yytext;
            return RELOP;
@@ -846,7 +847,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 73 "subc.l"
+#line 74 "subc.l"
 {
 		   yylval.stringVal = yytext;
            return EQUOP;
@@ -854,7 +855,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 78 "subc.l"
+#line 79 "subc.l"
 {
 		   yylval.stringVal = yytext;
     	   return INCOP;	
@@ -862,7 +863,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 83 "subc.l"
+#line 84 "subc.l"
 {
 		   yylval.stringVal = yytext;
        	   return DECOP;
@@ -870,7 +871,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 88 "subc.l"
+#line 89 "subc.l"
 { 
 		   yylval.stringVal = yytext;
 	    return STRUCTOP;
@@ -878,18 +879,18 @@ YY_RULE_SETUP
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 93 "subc.l"
+#line 94 "subc.l"
 
 	YY_BREAK
 case 14:
 /* rule 14 can match eol */
 YY_RULE_SETUP
-#line 94 "subc.l"
+#line 95 "subc.l"
 ++lineno;
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 95 "subc.l"
+#line 96 "subc.l"
 {
 		   ++comment_depth;
 		   BEGIN (COMMENT);
@@ -897,20 +898,20 @@ YY_RULE_SETUP
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 99 "subc.l"
+#line 100 "subc.l"
 if(--comment_depth == 0) BEGIN (INITIAL);
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 100 "subc.l"
+#line 101 "subc.l"
 {}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 103 "subc.l"
+#line 104 "subc.l"
 ECHO;
 	YY_BREAK
-#line 914 "lex.yy.c"
+#line 915 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(COMMENT):
 	yyterminate();
@@ -1909,7 +1910,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 103 "subc.l"
+#line 104 "subc.l"
 
 
 

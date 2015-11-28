@@ -48,7 +48,8 @@ Operators 	    [\(\)\[\]\{\}\-\,\!\+\/\%\=\&\|\;\*\.]
 
 {Operators}	{
            //printf("%s\t", yytext);
-           return yytext[0]; 
+	    yylval.stringVal = yytext;
+	    return yytext[0]; 
         }
 
     /*"+="|"-="|"*="|"/="|"%=" {
