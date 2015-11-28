@@ -14,45 +14,44 @@ Grammar
     5        | type_specifier pointers ID '[' const_expr ']' ';'
     6        | func_decl ';'
     7        | type_specifier ';'
+    8        | func_decl compound_stmt
 
-    8 $@1: %empty
+    9 type_specifier: TYPE
+   10               | VOID
+   11               | struct_specifier
 
-    9 ext_def: func_decl $@1 compound_stmt
+   12 @1: %empty
 
-   10 type_specifier: TYPE
-   11               | VOID
-   12               | struct_specifier
+   13 struct_specifier: STRUCT ID '{' @1 def_list '}'
+   14                 | STRUCT ID
 
-   13 @2: %empty
+   15 func_decl: type_specifier pointers ID '(' ')'
+   16          | type_specifier pointers ID '(' VOID ')'
 
-   14 struct_specifier: STRUCT ID '{' @2 def_list '}'
-   15                 | STRUCT ID
+   17 @2: %empty
 
-   16 func_decl: type_specifier pointers ID '(' ')'
-   17          | type_specifier pointers ID '(' VOID ')'
+   18 func_decl: type_specifier pointers ID '(' @2 param_list ')'
 
-   18 @3: %empty
+   19 pointers: '*'
+   20         | %empty
 
-   19 func_decl: type_specifier pointers ID '(' @3 param_list ')'
+   21 param_list: param_decl
+   22           | param_list ',' param_decl
 
-   20 pointers: '*'
-   21         | %empty
+   23 param_decl: type_specifier pointers ID
+   24           | type_specifier pointers ID '[' const_expr ']'
 
-   22 param_list: param_decl
-   23           | param_list ',' param_decl
+   25 def_list: def_list def
+   26         | %empty
 
-   24 param_decl: type_specifier pointers ID
-   25           | type_specifier pointers ID '[' const_expr ']'
+   27 def: type_specifier pointers ID ';'
+   28    | type_specifier pointers ID '[' const_expr ']' ';'
+   29    | type_specifier ';'
+   30    | func_decl ';'
 
-   26 def_list: def_list def
-   27         | %empty
+   31 $@3: %empty
 
-   28 def: type_specifier pointers ID ';'
-   29    | type_specifier pointers ID '[' const_expr ']' ';'
-   30    | type_specifier ';'
-   31    | func_decl ';'
-
-   32 compound_stmt: '{' local_defs stmt_list '}'
+   32 compound_stmt: '{' $@3 local_defs stmt_list '}'
 
    33 local_defs: def_list
 
@@ -124,23 +123,23 @@ Terminals, with rules where they appear
 $end (0) 0
 '!' (33) 70
 '&' (38) 75
-'(' (40) 16 17 19 41 42 43 44 63 64 80 81
-')' (41) 16 17 19 41 42 43 44 63 64 80 81
-'*' (42) 20 76
+'(' (40) 15 16 18 41 42 43 44 63 64 80 81
+')' (41) 15 16 18 41 42 43 44 63 64 80 81
+'*' (42) 19 76
 '+' (43) 60
-',' (44) 23 83
+',' (44) 22 83
 '-' (45) 61 69
 '.' (46) 78
-';' (59) 4 5 6 7 28 29 30 31 36 38 39 40 44 45 46
+';' (59) 4 5 6 7 27 28 29 30 36 38 39 40 44 45 46
 '=' (61) 50
-'[' (91) 5 25 29 77
-']' (93) 5 25 29 77
-'{' (123) 14 32
-'}' (125) 14 32
+'[' (91) 5 24 28 77
+']' (93) 5 24 28 77
+'{' (123) 13 32
+'}' (125) 13 32
 error (256)
-ID (258) 4 5 14 15 16 17 19 24 25 28 29 68 78 79
-TYPE (259) 10
-VOID (260) 11 17
+ID (258) 4 5 13 14 15 16 18 23 24 27 28 68 78 79
+TYPE (259) 9
+VOID (260) 10 16
 ELSE (261) 42
 LOGICAL_OR (262) 53
 LOGICAL_AND (263) 56
@@ -149,7 +148,7 @@ RELOP (265) 58
 INCOP (266) 71 73
 DECOP (267) 72 74
 STRUCTOP (268) 79
-STRUCT (269) 14 15
+STRUCT (269) 13 14
 CHAR_CONST (270) 66
 STRING (271) 67
 INTEGER_CONST (272) 65
@@ -170,31 +169,31 @@ program (40)
 ext_def_list (41)
     on left: 2 3, on right: 1 2
 ext_def (42)
-    on left: 4 5 6 7 9, on right: 2
-$@1 (43)
-    on left: 8, on right: 9
-type_specifier (44)
-    on left: 10 11 12, on right: 4 5 7 16 17 19 24 25 28 29 30
-struct_specifier (45)
-    on left: 14 15, on right: 12
-@2 (46)
-    on left: 13, on right: 14
-func_decl (47)
-    on left: 16 17 19, on right: 6 9 31
-@3 (48)
-    on left: 18, on right: 19
-pointers (49)
-    on left: 20 21, on right: 4 5 16 17 19 24 25 28 29
-param_list (50)
-    on left: 22 23, on right: 19 23
-param_decl (51)
-    on left: 24 25, on right: 22 23
-def_list (52)
-    on left: 26 27, on right: 14 26 33
-def (53)
-    on left: 28 29 30 31, on right: 26
-compound_stmt (54)
-    on left: 32, on right: 9 37
+    on left: 4 5 6 7 8, on right: 2
+type_specifier (43)
+    on left: 9 10 11, on right: 4 5 7 15 16 18 23 24 27 28 29
+struct_specifier (44)
+    on left: 13 14, on right: 11
+@1 (45)
+    on left: 12, on right: 13
+func_decl (46)
+    on left: 15 16 18, on right: 6 8 30
+@2 (47)
+    on left: 17, on right: 18
+pointers (48)
+    on left: 19 20, on right: 4 5 15 16 18 23 24 27 28
+param_list (49)
+    on left: 21 22, on right: 18 22
+param_decl (50)
+    on left: 23 24, on right: 21 22
+def_list (51)
+    on left: 25 26, on right: 13 25 33
+def (52)
+    on left: 27 28 29 30, on right: 25
+compound_stmt (53)
+    on left: 32, on right: 8 37
+$@3 (54)
+    on left: 31, on right: 32
 local_defs (55)
     on left: 33, on right: 32
 stmt_list (56)
@@ -205,7 +204,7 @@ stmt (57)
 expr_e (58)
     on left: 47 48, on right: 44
 const_expr (59)
-    on left: 49, on right: 5 25 29
+    on left: 49, on right: 5 24 28
 expr (60)
     on left: 50 51, on right: 36 39 41 42 43 47 49 50 63 77 82 83
 or_expr (61)
@@ -268,22 +267,22 @@ State 3
 
 State 4
 
-   10 type_specifier: TYPE .
+    9 type_specifier: TYPE .
 
-    $default  reduce using rule 10 (type_specifier)
+    $default  reduce using rule 9 (type_specifier)
 
 
 State 5
 
-   11 type_specifier: VOID .
+   10 type_specifier: VOID .
 
-    $default  reduce using rule 11 (type_specifier)
+    $default  reduce using rule 10 (type_specifier)
 
 
 State 6
 
-   14 struct_specifier: STRUCT . ID '{' @2 def_list '}'
-   15                 | STRUCT . ID
+   13 struct_specifier: STRUCT . ID '{' @1 def_list '}'
+   14                 | STRUCT . ID
 
     ID  shift, and go to state 11
 
@@ -300,52 +299,51 @@ State 8
     4 ext_def: type_specifier . pointers ID ';'
     5        | type_specifier . pointers ID '[' const_expr ']' ';'
     7        | type_specifier . ';'
-   16 func_decl: type_specifier . pointers ID '(' ')'
-   17          | type_specifier . pointers ID '(' VOID ')'
-   19          | type_specifier . pointers ID '(' @3 param_list ')'
+   15 func_decl: type_specifier . pointers ID '(' ')'
+   16          | type_specifier . pointers ID '(' VOID ')'
+   18          | type_specifier . pointers ID '(' @2 param_list ')'
 
     '*'  shift, and go to state 12
     ';'  shift, and go to state 13
 
-    $default  reduce using rule 21 (pointers)
+    $default  reduce using rule 20 (pointers)
 
     pointers  go to state 14
 
 
 State 9
 
-   12 type_specifier: struct_specifier .
+   11 type_specifier: struct_specifier .
 
-    $default  reduce using rule 12 (type_specifier)
+    $default  reduce using rule 11 (type_specifier)
 
 
 State 10
 
     6 ext_def: func_decl . ';'
-    9        | func_decl . $@1 compound_stmt
+    8        | func_decl . compound_stmt
 
     ';'  shift, and go to state 15
+    '{'  shift, and go to state 16
 
-    $default  reduce using rule 8 ($@1)
-
-    $@1  go to state 16
+    compound_stmt  go to state 17
 
 
 State 11
 
-   14 struct_specifier: STRUCT ID . '{' @2 def_list '}'
-   15                 | STRUCT ID .
+   13 struct_specifier: STRUCT ID . '{' @1 def_list '}'
+   14                 | STRUCT ID .
 
-    '{'  shift, and go to state 17
+    '{'  shift, and go to state 18
 
-    $default  reduce using rule 15 (struct_specifier)
+    $default  reduce using rule 14 (struct_specifier)
 
 
 State 12
 
-   20 pointers: '*' .
+   19 pointers: '*' .
 
-    $default  reduce using rule 20 (pointers)
+    $default  reduce using rule 19 (pointers)
 
 
 State 13
@@ -359,11 +357,11 @@ State 14
 
     4 ext_def: type_specifier pointers . ID ';'
     5        | type_specifier pointers . ID '[' const_expr ']' ';'
-   16 func_decl: type_specifier pointers . ID '(' ')'
-   17          | type_specifier pointers . ID '(' VOID ')'
-   19          | type_specifier pointers . ID '(' @3 param_list ')'
+   15 func_decl: type_specifier pointers . ID '(' ')'
+   16          | type_specifier pointers . ID '(' VOID ')'
+   18          | type_specifier pointers . ID '(' @2 param_list ')'
 
-    ID  shift, and go to state 18
+    ID  shift, and go to state 19
 
 
 State 15
@@ -375,57 +373,57 @@ State 15
 
 State 16
 
-    9 ext_def: func_decl $@1 . compound_stmt
+   32 compound_stmt: '{' . $@3 local_defs stmt_list '}'
 
-    '{'  shift, and go to state 19
+    $default  reduce using rule 31 ($@3)
 
-    compound_stmt  go to state 20
+    $@3  go to state 20
 
 
 State 17
 
-   14 struct_specifier: STRUCT ID '{' . @2 def_list '}'
+    8 ext_def: func_decl compound_stmt .
 
-    $default  reduce using rule 13 (@2)
-
-    @2  go to state 21
+    $default  reduce using rule 8 (ext_def)
 
 
 State 18
 
+   13 struct_specifier: STRUCT ID '{' . @1 def_list '}'
+
+    $default  reduce using rule 12 (@1)
+
+    @1  go to state 21
+
+
+State 19
+
     4 ext_def: type_specifier pointers ID . ';'
     5        | type_specifier pointers ID . '[' const_expr ']' ';'
-   16 func_decl: type_specifier pointers ID . '(' ')'
-   17          | type_specifier pointers ID . '(' VOID ')'
-   19          | type_specifier pointers ID . '(' @3 param_list ')'
+   15 func_decl: type_specifier pointers ID . '(' ')'
+   16          | type_specifier pointers ID . '(' VOID ')'
+   18          | type_specifier pointers ID . '(' @2 param_list ')'
 
     '['  shift, and go to state 22
     '('  shift, and go to state 23
     ';'  shift, and go to state 24
 
 
-State 19
+State 20
 
-   32 compound_stmt: '{' . local_defs stmt_list '}'
+   32 compound_stmt: '{' $@3 . local_defs stmt_list '}'
 
-    $default  reduce using rule 27 (def_list)
+    $default  reduce using rule 26 (def_list)
 
     def_list    go to state 25
     local_defs  go to state 26
 
 
-State 20
-
-    9 ext_def: func_decl $@1 compound_stmt .
-
-    $default  reduce using rule 9 (ext_def)
-
-
 State 21
 
-   14 struct_specifier: STRUCT ID '{' @2 . def_list '}'
+   13 struct_specifier: STRUCT ID '{' @1 . def_list '}'
 
-    $default  reduce using rule 27 (def_list)
+    $default  reduce using rule 26 (def_list)
 
     def_list  go to state 27
 
@@ -458,17 +456,17 @@ State 22
 
 State 23
 
-   16 func_decl: type_specifier pointers ID '(' . ')'
-   17          | type_specifier pointers ID '(' . VOID ')'
-   19          | type_specifier pointers ID '(' . @3 param_list ')'
+   15 func_decl: type_specifier pointers ID '(' . ')'
+   16          | type_specifier pointers ID '(' . VOID ')'
+   18          | type_specifier pointers ID '(' . @2 param_list ')'
 
     VOID  shift, and go to state 47
     ')'   shift, and go to state 48
 
-    VOID      [reduce using rule 18 (@3)]
-    $default  reduce using rule 18 (@3)
+    VOID      [reduce using rule 17 (@2)]
+    $default  reduce using rule 17 (@2)
 
-    @3  go to state 49
+    @2  go to state 49
 
 
 State 24
@@ -480,7 +478,7 @@ State 24
 
 State 25
 
-   26 def_list: def_list . def
+   25 def_list: def_list . def
    33 local_defs: def_list .
 
     TYPE    shift, and go to state 4
@@ -497,7 +495,7 @@ State 25
 
 State 26
 
-   32 compound_stmt: '{' local_defs . stmt_list '}'
+   32 compound_stmt: '{' $@3 local_defs . stmt_list '}'
 
     $default  reduce using rule 35 (stmt_list)
 
@@ -506,8 +504,8 @@ State 26
 
 State 27
 
-   14 struct_specifier: STRUCT ID '{' @2 def_list . '}'
-   26 def_list: def_list . def
+   13 struct_specifier: STRUCT ID '{' @1 def_list . '}'
+   25 def_list: def_list . def
 
     TYPE    shift, and go to state 4
     VOID    shift, and go to state 5
@@ -777,21 +775,21 @@ State 46
 
 State 47
 
-   17 func_decl: type_specifier pointers ID '(' VOID . ')'
+   16 func_decl: type_specifier pointers ID '(' VOID . ')'
 
     ')'  shift, and go to state 77
 
 
 State 48
 
-   16 func_decl: type_specifier pointers ID '(' ')' .
+   15 func_decl: type_specifier pointers ID '(' ')' .
 
-    $default  reduce using rule 16 (func_decl)
+    $default  reduce using rule 15 (func_decl)
 
 
 State 49
 
-   19 func_decl: type_specifier pointers ID '(' @3 . param_list ')'
+   18 func_decl: type_specifier pointers ID '(' @2 . param_list ')'
 
     TYPE    shift, and go to state 4
     VOID    shift, and go to state 5
@@ -805,38 +803,38 @@ State 49
 
 State 50
 
-   16 func_decl: type_specifier . pointers ID '(' ')'
-   17          | type_specifier . pointers ID '(' VOID ')'
-   19          | type_specifier . pointers ID '(' @3 param_list ')'
-   28 def: type_specifier . pointers ID ';'
-   29    | type_specifier . pointers ID '[' const_expr ']' ';'
-   30    | type_specifier . ';'
+   15 func_decl: type_specifier . pointers ID '(' ')'
+   16          | type_specifier . pointers ID '(' VOID ')'
+   18          | type_specifier . pointers ID '(' @2 param_list ')'
+   27 def: type_specifier . pointers ID ';'
+   28    | type_specifier . pointers ID '[' const_expr ']' ';'
+   29    | type_specifier . ';'
 
     '*'  shift, and go to state 12
     ';'  shift, and go to state 81
 
-    $default  reduce using rule 21 (pointers)
+    $default  reduce using rule 20 (pointers)
 
     pointers  go to state 82
 
 
 State 51
 
-   31 def: func_decl . ';'
+   30 def: func_decl . ';'
 
     ';'  shift, and go to state 83
 
 
 State 52
 
-   26 def_list: def_list def .
+   25 def_list: def_list def .
 
-    $default  reduce using rule 26 (def_list)
+    $default  reduce using rule 25 (def_list)
 
 
 State 53
 
-   32 compound_stmt: '{' local_defs stmt_list . '}'
+   32 compound_stmt: '{' $@3 local_defs stmt_list . '}'
    34 stmt_list: stmt_list . stmt
 
     ID             shift, and go to state 28
@@ -857,7 +855,7 @@ State 53
     BREAK          shift, and go to state 88
     CONTINUE       shift, and go to state 89
     ';'            shift, and go to state 90
-    '{'            shift, and go to state 19
+    '{'            shift, and go to state 16
     '}'            shift, and go to state 91
 
     compound_stmt  go to state 92
@@ -873,9 +871,9 @@ State 53
 
 State 54
 
-   14 struct_specifier: STRUCT ID '{' @2 def_list '}' .
+   13 struct_specifier: STRUCT ID '{' @1 def_list '}' .
 
-    $default  reduce using rule 14 (struct_specifier)
+    $default  reduce using rule 13 (struct_specifier)
 
 
 State 55
@@ -1273,27 +1271,27 @@ State 76
 
 State 77
 
-   17 func_decl: type_specifier pointers ID '(' VOID ')' .
+   16 func_decl: type_specifier pointers ID '(' VOID ')' .
 
-    $default  reduce using rule 17 (func_decl)
+    $default  reduce using rule 16 (func_decl)
 
 
 State 78
 
-   24 param_decl: type_specifier . pointers ID
-   25           | type_specifier . pointers ID '[' const_expr ']'
+   23 param_decl: type_specifier . pointers ID
+   24           | type_specifier . pointers ID '[' const_expr ']'
 
     '*'  shift, and go to state 12
 
-    $default  reduce using rule 21 (pointers)
+    $default  reduce using rule 20 (pointers)
 
     pointers  go to state 112
 
 
 State 79
 
-   19 func_decl: type_specifier pointers ID '(' @3 param_list . ')'
-   23 param_list: param_list . ',' param_decl
+   18 func_decl: type_specifier pointers ID '(' @2 param_list . ')'
+   22 param_list: param_list . ',' param_decl
 
     ','  shift, and go to state 113
     ')'  shift, and go to state 114
@@ -1301,34 +1299,34 @@ State 79
 
 State 80
 
-   22 param_list: param_decl .
+   21 param_list: param_decl .
 
-    $default  reduce using rule 22 (param_list)
+    $default  reduce using rule 21 (param_list)
 
 
 State 81
 
-   30 def: type_specifier ';' .
+   29 def: type_specifier ';' .
 
-    $default  reduce using rule 30 (def)
+    $default  reduce using rule 29 (def)
 
 
 State 82
 
-   16 func_decl: type_specifier pointers . ID '(' ')'
-   17          | type_specifier pointers . ID '(' VOID ')'
-   19          | type_specifier pointers . ID '(' @3 param_list ')'
-   28 def: type_specifier pointers . ID ';'
-   29    | type_specifier pointers . ID '[' const_expr ']' ';'
+   15 func_decl: type_specifier pointers . ID '(' ')'
+   16          | type_specifier pointers . ID '(' VOID ')'
+   18          | type_specifier pointers . ID '(' @2 param_list ')'
+   27 def: type_specifier pointers . ID ';'
+   28    | type_specifier pointers . ID '[' const_expr ']' ';'
 
     ID  shift, and go to state 115
 
 
 State 83
 
-   31 def: func_decl ';' .
+   30 def: func_decl ';' .
 
-    $default  reduce using rule 31 (def)
+    $default  reduce using rule 30 (def)
 
 
 State 84
@@ -1403,7 +1401,7 @@ State 90
 
 State 91
 
-   32 compound_stmt: '{' local_defs stmt_list '}' .
+   32 compound_stmt: '{' $@3 local_defs stmt_list '}' .
 
     $default  reduce using rule 32 (compound_stmt)
 
@@ -1599,15 +1597,15 @@ State 111
 
 State 112
 
-   24 param_decl: type_specifier pointers . ID
-   25           | type_specifier pointers . ID '[' const_expr ']'
+   23 param_decl: type_specifier pointers . ID
+   24           | type_specifier pointers . ID '[' const_expr ']'
 
     ID  shift, and go to state 127
 
 
 State 113
 
-   23 param_list: param_list ',' . param_decl
+   22 param_list: param_list ',' . param_decl
 
     TYPE    shift, and go to state 4
     VOID    shift, and go to state 5
@@ -1620,18 +1618,18 @@ State 113
 
 State 114
 
-   19 func_decl: type_specifier pointers ID '(' @3 param_list ')' .
+   18 func_decl: type_specifier pointers ID '(' @2 param_list ')' .
 
-    $default  reduce using rule 19 (func_decl)
+    $default  reduce using rule 18 (func_decl)
 
 
 State 115
 
-   16 func_decl: type_specifier pointers ID . '(' ')'
-   17          | type_specifier pointers ID . '(' VOID ')'
-   19          | type_specifier pointers ID . '(' @3 param_list ')'
-   28 def: type_specifier pointers ID . ';'
-   29    | type_specifier pointers ID . '[' const_expr ']' ';'
+   15 func_decl: type_specifier pointers ID . '(' ')'
+   16          | type_specifier pointers ID . '(' VOID ')'
+   18          | type_specifier pointers ID . '(' @2 param_list ')'
+   27 def: type_specifier pointers ID . ';'
+   28    | type_specifier pointers ID . '[' const_expr ']' ';'
 
     '['  shift, and go to state 129
     '('  shift, and go to state 23
@@ -1794,24 +1792,24 @@ State 126
 
 State 127
 
-   24 param_decl: type_specifier pointers ID .
-   25           | type_specifier pointers ID . '[' const_expr ']'
+   23 param_decl: type_specifier pointers ID .
+   24           | type_specifier pointers ID . '[' const_expr ']'
 
     '['  shift, and go to state 137
 
-    $default  reduce using rule 24 (param_decl)
+    $default  reduce using rule 23 (param_decl)
 
 
 State 128
 
-   23 param_list: param_list ',' param_decl .
+   22 param_list: param_list ',' param_decl .
 
-    $default  reduce using rule 23 (param_list)
+    $default  reduce using rule 22 (param_list)
 
 
 State 129
 
-   29 def: type_specifier pointers ID '[' . const_expr ']' ';'
+   28 def: type_specifier pointers ID '[' . const_expr ']' ';'
 
     ID             shift, and go to state 28
     '&'            shift, and go to state 29
@@ -1837,9 +1835,9 @@ State 129
 
 State 130
 
-   28 def: type_specifier pointers ID ';' .
+   27 def: type_specifier pointers ID ';' .
 
-    $default  reduce using rule 28 (def)
+    $default  reduce using rule 27 (def)
 
 
 State 131
@@ -1887,7 +1885,7 @@ State 136
 
 State 137
 
-   25 param_decl: type_specifier pointers ID '[' . const_expr ']'
+   24 param_decl: type_specifier pointers ID '[' . const_expr ']'
 
     ID             shift, and go to state 28
     '&'            shift, and go to state 29
@@ -1913,7 +1911,7 @@ State 137
 
 State 138
 
-   29 def: type_specifier pointers ID '[' const_expr . ']' ';'
+   28 def: type_specifier pointers ID '[' const_expr . ']' ';'
 
     ']'  shift, and go to state 143
 
@@ -1941,7 +1939,7 @@ State 139
     BREAK          shift, and go to state 88
     CONTINUE       shift, and go to state 89
     ';'            shift, and go to state 90
-    '{'            shift, and go to state 19
+    '{'            shift, and go to state 16
 
     compound_stmt  go to state 92
     stmt           go to state 144
@@ -1976,7 +1974,7 @@ State 140
     BREAK          shift, and go to state 88
     CONTINUE       shift, and go to state 89
     ';'            shift, and go to state 90
-    '{'            shift, and go to state 19
+    '{'            shift, and go to state 16
 
     compound_stmt  go to state 92
     stmt           go to state 145
@@ -2019,14 +2017,14 @@ State 141
 
 State 142
 
-   25 param_decl: type_specifier pointers ID '[' const_expr . ']'
+   24 param_decl: type_specifier pointers ID '[' const_expr . ']'
 
     ']'  shift, and go to state 147
 
 
 State 143
 
-   29 def: type_specifier pointers ID '[' const_expr ']' . ';'
+   28 def: type_specifier pointers ID '[' const_expr ']' . ';'
 
     ';'  shift, and go to state 148
 
@@ -2057,16 +2055,16 @@ State 146
 
 State 147
 
-   25 param_decl: type_specifier pointers ID '[' const_expr ']' .
+   24 param_decl: type_specifier pointers ID '[' const_expr ']' .
 
-    $default  reduce using rule 25 (param_decl)
+    $default  reduce using rule 24 (param_decl)
 
 
 State 148
 
-   29 def: type_specifier pointers ID '[' const_expr ']' ';' .
+   28 def: type_specifier pointers ID '[' const_expr ']' ';' .
 
-    $default  reduce using rule 29 (def)
+    $default  reduce using rule 28 (def)
 
 
 State 149
@@ -2091,7 +2089,7 @@ State 149
     BREAK          shift, and go to state 88
     CONTINUE       shift, and go to state 89
     ';'            shift, and go to state 90
-    '{'            shift, and go to state 19
+    '{'            shift, and go to state 16
 
     compound_stmt  go to state 92
     stmt           go to state 151
@@ -2168,7 +2166,7 @@ State 153
     BREAK          shift, and go to state 88
     CONTINUE       shift, and go to state 89
     ';'            shift, and go to state 90
-    '{'            shift, and go to state 19
+    '{'            shift, and go to state 16
 
     compound_stmt  go to state 92
     stmt           go to state 154

@@ -88,16 +88,7 @@ ext_def
 		}
 		| type_specifier ';' {
 		}
-		| func_decl { 
-		    push_scope();
-		    if($1)
-			push_ste_list($1->formals);
-		}
-		    compound_stmt {
-		    free_scope();
-		    if($1)
-			$1->isdeclared = 1;
-		}
+		| func_decl compound_stmt
 ;
 
 type_specifier
@@ -396,7 +387,18 @@ def
 		}
 ;
 compound_stmt
-		: '{' local_defs stmt_list '}' {
+		: '{'{
+		    push_scope();
+		    if($<declptr>0 && $<declptr>0->declclass == Hash("FUNC"))
+		    {
+			push_ste_list($<declptr>0->formals);
+		    }
+		} local_defs stmt_list '}' {
+		    free_scope();
+		    if($<declptr>0 && $<declptr>0->declclass == Hash("FUNC"))
+		    {
+			$<declptr>0->isdeclared = 1;
+		    } 
 		}
 ;
 local_defs  /* local definitions, of which scope is only inside of compound statement */
@@ -765,7 +767,7 @@ unary
 		    }	
 		}
 		| unary '(' ')' {
-		    if(check_is_proc($1))
+		    if($1 && check_is_proc($1))
 		    {
 			$$ = check_function_call($1, NULL);
 		    }
