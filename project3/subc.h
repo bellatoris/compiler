@@ -85,7 +85,7 @@ struct decl  *makenumconstdecl(struct decl *typeptr, int intconst);
 struct decl  *makecharconstdecl(struct decl *typetpr, char *charconst);
 struct decl  *makestringconstdecl(struct decl *typeptr, const char *stringconst); 
 struct decl  *makeprocdecl();
-struct decl  *makeshelldecl(struct decl *typeptr);
+
 
 
 struct decl  *finddecl(struct id* entry);   // entry를 가진 ste가 전체 stack scope에 있는지 확인 한다.해당하는 id가 존재하는지 확인 하려는 목적이다.

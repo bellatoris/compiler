@@ -65,7 +65,7 @@ ext_def_list: ext_def_list ext_def
 
 ext_def
 		: type_specifier pointers ID ';' {
-		    if($1 && !check_is_declared_for_else($3))	//ID와 동일한 ste가 현재 scope에 있는지 확인
+		    if($1 && !check_is_declared_for_else($3)) 
 		    {
 			declare($3, makevardecl($2? $2:$1)); 
 			//printStack(SStack.TOP->top);
@@ -181,9 +181,11 @@ func_decl
 			$$ = procdecl;
 			declare($3, $$);
 		    }
+		    //int type은 한번 선언된적이 있는 function이 인지 확인 해준다.
 		    else if(isdecl == inttype)
 		    {
 			struct decl *temp = finddecl($3);
+			//처음 선언했던 formal과 지금 선언하려는 formal이 같은지 확인한다.
 			if(!check_function_declare(temp, procdecl))
 			{
 			    $$ = NULL;
@@ -252,6 +254,7 @@ func_decl
 		| type_specifier pointers ID '(' {
 		    struct decl *procdecl = makeprocdecl();
 		    //tellmetype(procdecl);
+		    //필요없는 elementvar을 사용해서 선언된적 있는 ID인지 확인한다.
 		    procdecl->elementvar = check_is_declared_for_else($3);
 		    push_scope();
 		    declare(returnid, $2? $2:$1);
@@ -303,7 +306,8 @@ func_decl
 
 pointers
 		: '*' {
-		    if($<declptr>0)
+		    //TYPE이면 ptrdecl을 미리 만들어 둔다.
+		    if($<declptr>0 && $<declptr>0->declclass == TYPE)	
 			$$ = makeptrdecl($<declptr>0);
 		    else
 			$$ = NULL;
@@ -445,13 +449,14 @@ const_expr
 		    {
 			$$ = NULL;
 		    }
+		    //check index type
 		    else if(check_compatible_type($1->type, inttype))
 		    {
 			$$ = $1;
 		    }
 		    else
 		    {
-			yyerror("not inttype");
+			yyerror("index is not inttype");
 			$$ = NULL;
 		    }
 		}
@@ -1097,6 +1102,7 @@ struct ste *free_ste(struct ste *steptr)
     return NULL;
 }
 
+//when decl free make all pointer and value 0
 struct decl *free_decl(struct decl *declptr)
 {
     if(declptr->type)
@@ -1298,13 +1304,6 @@ struct decl *makeprocdecl()
     return temp;
 }
 
-struct decl *makeshelldecl(struct decl *typeptr)
-{
-    struct decl *temp = (struct decl*)malloc(sizeof(struct decl));
-    temp->declclass = Hash("Shell");
-    temp->type = typeptr;
-    return temp;
-}
 
 
 
@@ -1345,7 +1344,6 @@ struct decl *findcurrentdecl(struct id *fieldid, struct ste *fieldlist)
         {
 	    if(temp->name == fieldid)
 	        {
-		    //REDUCE(temp->name->name);
 		    return temp->decl;
 		}
 	    temp = temp->prev;
@@ -1710,9 +1708,7 @@ struct decl *check_function_declare(struct decl *procptr, struct decl *procptr2)
 	    if(check_compatible(formals->decl->type, actuals->decl->type))
 	    {
 		if(formals->decl->type->typeclass == Hash("ptr") && actuals->decl->type->typeclass == Hash("array"))
-		{
-		    break;
-		} 
+		    break; 
 		else
 		{
 		    formals = formals->prev;
@@ -1720,9 +1716,7 @@ struct decl *check_function_declare(struct decl *procptr, struct decl *procptr2)
 		}
 	    }
 	    else
-	    {
 		break;
-	    }
 	}
 	else if(formals->name == returnid)
 	{
@@ -1737,9 +1731,7 @@ struct decl *check_function_declare(struct decl *procptr, struct decl *procptr2)
 		actuals = actuals->prev;
 	    }
 	    else
-	    {
 		break;
-	    }
 	}
 	else if(formals->decl->type->typeclass == Hash("array") && actuals->decl->type->typeclass == Hash("array"))
 	{
@@ -1749,14 +1741,10 @@ struct decl *check_function_declare(struct decl *procptr, struct decl *procptr2)
 		actuals = actuals->prev;
 	    }
 	    else
-	    {
 		break;
-	    }
 	}
 	else
-	{
 	    break;
-	}
     }
     if(formals || actuals)
     {
