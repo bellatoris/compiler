@@ -3260,7 +3260,7 @@ struct decl *reloptype(struct decl *type1, struct decl *type2)
 {
     if(check_compatible_type(type1, type2))
     {
-	if(type1->typeclass == Hash("struct") || type1->typeclass == Hash("array"))
+	if(type1->typeclass == Hash("struct") || type1->typeclass == Hash("array") || type1->typeclass == VOID)
 	{
 	    yyerror("type is not suitable for relop operaton");
 	    return NULL;
@@ -3281,7 +3281,7 @@ struct decl *equoptype(struct decl *type1, struct decl *type2)
 {
     if(check_compatible_type(type1, type2))
     {
-	if(type1->typeclass == Hash("struct") || type1->typeclass == Hash("array"))
+	if(type1->typeclass == Hash("struct") || type1->typeclass == Hash("array") || type1->typeclass == VOID)
 	{
 	    yyerror("type is not suitable for equop operaton");
 	    return NULL;
