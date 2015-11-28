@@ -52,8 +52,8 @@ struct decl{
     int		    declclass;  /* DECL Class: VAR, CONST, FUNC, TYPE	*/
     struct decl	    *type;  	/* VAR, CONST: pointer to its type decl	*/
     int		    intvalue;	/* CONST: value of integer const	*/
-    char	    *charvalue;
-    const char	    *stringvalue;
+    char	    *charvalue; /* CONST: value of char const		*/
+    const char	    *stringvalue;/*CONST: value of string const		*/
 //    float	    real_value;	/* CONST: value of float const		*/
     struct ste	    *formals;	/* FUNC: ptr to formals list		*/
     struct decl	    *returntype;/* FUNC: ptr to return TYPE decl	*/

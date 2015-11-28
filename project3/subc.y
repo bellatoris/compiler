@@ -43,7 +43,7 @@ void    REDUCE(char* s);
 %token<intVal>	    INTEGER_CONST
 %token		    RETURN
 %token              IF
-%token<stringVal>   ELSE
+%token		    ELSE
 %token              WHILE
 %token              FOR
 %token              BREAK
@@ -69,7 +69,7 @@ ext_def
 		    {
 			declare($3, makevardecl($2? $2:$1)); 
 			//printStack(SStack.TOP->top);
-			printStack(StrStack);
+			//printStack(StrStack);
 		    }
 		    else
 		    {
@@ -1805,23 +1805,8 @@ struct decl *check_is_declared_for_else(struct id *entry) //variable을 선언�
 	}
 	temp = temp->prev;
     }
-    
+    /*
     temp = StrStack;
-    while(temp)
-    {
-	if(temp->name == entry)
-	{
-	    yyerror("redeclaration");
-	    return temp->decl;
-	}
-	temp = temp->prev;
-    } 
-    return NULL;
-}
-
-struct decl *check_is_declared_for_struct(struct id *entry) //struct를 선언하기 위해 동일한 entry를 name으로 가지는 ste가 있는지 찾는 함수 이다. 전체 scope를 다 뒤진다. 
-{
-    struct ste *temp = SStack.TOP->top;
     while(temp)
     {
 	if(temp->name == entry)
@@ -1831,8 +1816,25 @@ struct decl *check_is_declared_for_struct(struct id *entry) //struct를 선언�
 	}
 	temp = temp->prev;
     }
+    */
+    return NULL; 
+}
 
-    temp = StrStack;
+struct decl *check_is_declared_for_struct(struct id *entry) //struct를 선언하기 위해 동일한 entry를 name으로 가지는 ste가 있는지 찾는 함수 이다. 전체 scope를 다 뒤진다. 
+{
+    /*
+    struct ste *temp = SStack.TOP->top;
+    while(temp)
+    {
+	if(temp->name == entry)
+	{
+	    yyerror("redeclaration");
+	    return temp->decl;
+	}
+	temp = temp->prev;
+    }*/
+    
+    struct ste *temp = StrStack;
     while(temp)
     {
 	if(temp->name == entry)
