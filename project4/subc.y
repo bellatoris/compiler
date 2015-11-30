@@ -395,13 +395,13 @@ def
 compound_stmt
 		: '{'{
 		    push_scope();
-		    if(!finddecl(returnid))
+		    if($<declptr>0 && !finddecl(returnid))
 		    {
 			push_ste_list($<declptr>0->formals);
 		    } 
 		} local_defs stmt_list '}' {
 		    free_scope();
-		    if(!finddecl(returnid))
+		    if($<declptr>0 && !finddecl(returnid))
 		    {
 			$<declptr>0->isdeclared = 1;
 		    }

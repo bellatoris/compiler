@@ -1803,7 +1803,7 @@ yyreduce:
 #line 396 "subc.y" /* yacc.c:1646  */
     {
 		    push_scope();
-		    if(!finddecl(returnid))
+		    if((yyvsp[-1].declptr) && !finddecl(returnid))
 		    {
 			push_ste_list((yyvsp[-1].declptr)->formals);
 		    }
@@ -1815,7 +1815,7 @@ yyreduce:
 #line 402 "subc.y" /* yacc.c:1646  */
     {
 		    free_scope();
-		    if(!finddecl(returnid))
+		    if((yyvsp[-5].declptr) && !finddecl(returnid))
 		    {
 			(yyvsp[-5].declptr)->isdeclared = 1;
 		    }
