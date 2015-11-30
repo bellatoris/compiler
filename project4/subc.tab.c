@@ -1806,7 +1806,7 @@ yyreduce:
 		    if(!finddecl(returnid))
 		    {
 			push_ste_list((yyvsp[-1].declptr)->formals);
-		    }
+		    } 
 		}
 #line 1812 "subc.tab.c" /* yacc.c:1646  */
     break;

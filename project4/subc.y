@@ -398,7 +398,7 @@ compound_stmt
 		    if(!finddecl(returnid))
 		    {
 			push_ste_list($<declptr>0->formals);
-		    }
+		    } 
 		} local_defs stmt_list '}' {
 		    free_scope();
 		    if(!finddecl(returnid))
