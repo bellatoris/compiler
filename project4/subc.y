@@ -494,10 +494,15 @@ stmt
 
 		}
 		| WRITE_INT '(' expr ')' {
+		    Write_Command("write_int");
 		}
 		| WRITE_CHAR '(' expr ')' {
 		}
 		| WRITE_STRING '(' expr ')' {
+		    char command[100];
+		    sprintf(command,"push_const str_%d",string_no++);
+		    Write_Command(command);
+		    Write_Command("write_string");
 		}
 ;
 expr_e
@@ -533,6 +538,7 @@ expr
 		: unary {
 		    Write_Command("push_reg sp");
 		    Write_Command("fetch");
+		    //struct assign은 길게 늘어뜨리면 될것이다. while문을 쓰면 될듯
 		}'=' expr {
 		    if(!$1 || !$4)
 		    {
@@ -546,6 +552,10 @@ expr
 			    $1->intvalue = $4->intvalue;
 			    $1->charvalue = $4->charvalue;
 			    $1->stringvalue = $4->stringvalue;
+			    if($4->fetch)
+			    {
+				Write_Command("fetch");
+			    }
 			    Write_Command("assign");
 			    Write_Command("fetch");
 			    Write_Command("shift_sp -1");
@@ -659,6 +669,7 @@ binary
 		    else if(minustype($1->type, $4->type))
 		    {
 			$$ = $1;
+			$$->fetch = 0;
 			Write_Command("sub");
 		    }
 		    else
@@ -693,13 +704,22 @@ unary
 			char command[100];
 			sprintf(command, "push_const %d", $1);
 			Write_Command(command);
+			$$->fetch = 0;
 		    }
 		}
 		| CHAR_CONST {
 		    $$ = makecharconstdecl(chartype, $1);
+		    $$->fetch = 0;
+		    char command[100];
+		    sprintf(command,"push_const %d", $$->charvalue[0]);
+		    Write_Command(command);
 		}
 		| STRING {
-		    $$ = makestringconstdecl(chartype, $1);
+		    $$ = makestringconstdecl(chartype, $1); 
+		    $$->fetch = 0;
+		    char command[100];
+		    sprintf(command, "str_%d. string %s", string_no, $$->stringvalue);
+		    Write_Else(command);
 		}
 		| ID {
 		    if(finddecl($1))
@@ -762,6 +782,29 @@ unary
 		    else
 		    {
 			$$ =$1;
+			Write_Command("push_reg sp");	
+			Write_Command("fetch");					
+			Write_Command("push_reg sp");				
+			Write_Command("fetch");					
+			Write_Command("fetch");
+			char command[100];
+			int size;
+			if($1->type->typeclass == Hash("ptr"))
+			{
+			    size = $1->type->ptrto->size;
+			} 
+			else
+			{
+			    size = 1;
+			}
+			sprintf(command, "push_const %d", size);
+			Write_Command(command);				
+			Write_Command("add");					
+			Write_Command("assign");				
+			Write_Command("fetch");
+			Write_Command(command);				
+			Write_Command("sub");					
+			$1->fetch = 0;
 		    }
 		}
 		| unary DECOP {
@@ -770,19 +813,88 @@ unary
 		    else
 		    {
 			$$ = $1;
+			Write_Command("push_reg sp");	
+			Write_Command("fetch");					
+			Write_Command("push_reg sp");				
+			Write_Command("fetch");					
+			Write_Command("fetch");
+			char command[100];
+			int size;
+			if($1->type->typeclass == Hash("ptr"))
+			{
+			    size = $1->type->ptrto->size;
+			} 
+			else
+			{
+			    size = 1;
+			}
+			sprintf(command, "push_const %d", size);
+			Write_Command(command);				
+			Write_Command("sub");					
+			Write_Command("assign");				
+			Write_Command("fetch");
+			Write_Command(command);				
+			Write_Command("add");					
+			$1->fetch = 0;
 		    }
 		}
 		| INCOP unary {
 		    if($2 && !INDECOPtype($2->type))
 			$$ = NULL;
 		    else
+			{
 			$$ = $2;
+			Write_Command("push_reg sp");
+			Write_Command("fetch");
+			Write_Command("push_reg sp");
+			Write_Command("fetch");
+			Write_Command("fetch");
+			char command[100];
+			int size;
+			if($2->type->typeclass == Hash("ptr"))
+			{
+			    size = $2->type->ptrto->size;
+			} 
+			else
+			{
+			    size = 1;
+			}
+			sprintf(command, "push_const %d", size);
+			Write_Command(command);				
+			Write_Command("add");					
+			Write_Command("assign");
+			Write_Command("fetch");
+			$2->fetch = 0;
+			}
 		}
 		| DECOP unary {
 		    if($2 && !INDECOPtype($2->type))
 			$$ = NULL;
 		    else
+		    {
 			$$ = $2;
+			Write_Command("push_reg sp");	
+			Write_Command("fetch");					
+			Write_Command("push_reg sp");				
+			Write_Command("fetch");					
+			Write_Command("fetch");
+			char command[100];
+			int size;
+			if($2->type->typeclass == Hash("ptr"))
+			{
+			    size = $2->type->ptrto->size;
+			} 
+			else
+			{
+			    size = 1;
+			}
+			sprintf(command, "push_const %d", size);
+			Write_Command(command);				
+			Write_Command("sub");					
+			Write_Command("assign");				
+			Write_Command("fetch");					
+			$2->fetch = 0;
+		    }      
 		}
 		| '&' unary %prec '!' {
 		    if(check_is_var_type($2))	//i must check this again! must deep copy
@@ -810,6 +922,8 @@ unary
 			if(temp = deep_copy_variable($2->type->ptrto))
 			{
 			    $$ = temp;
+			    if($2->fetch)
+				Write_Command("fetch");
 			}
 			else
 			    $$ = NULL;
@@ -832,7 +946,10 @@ unary
 			$$ = arrayaccess($1, $3->type);
 			char command[100];
 			sprintf(command, "push_const %d", $1->type->elementvar->size);
-			Write_Command("fetch");
+			if($3->fetch)
+			{
+			    Write_Command("fetch");
+			}
 			Write_Command(command);
 			Write_Command("mul");
 			Write_Command("add");
@@ -862,6 +979,10 @@ unary
 		    if(check_is_var_type($1))
 		    {
 			$$ = structPtraccess($1, $3);
+			char command[100];
+			sprintf(command, "push_const %d", $$->offset);
+			Write_Command(command);
+			Write_Command("add");
 		    }
 		    else
 		    {
@@ -1042,6 +1163,7 @@ void init_type()
     returnid = enter(ID, "*return", 7);
     in_func = 0;
     label_no = 0;
+    string_no = 0;
 
     Write_Command("shift_sp 1");
     Write_Command("push_const EXIT");
@@ -1449,6 +1571,7 @@ struct decl *makevardecl(struct decl *typeptr)	/* vardecl을 만든다 */
     temp->declclass = Hash("VAR");
     temp->type = typeptr;
     temp->size = typeptr->size;
+    temp->fetch = 1;
     return temp;
 }
 
@@ -1459,6 +1582,7 @@ struct decl *makeptrdecl(struct decl *typeptr)
     temp->typeclass = Hash("ptr");
     temp->declclass = TYPE;
     temp->size = 1;
+    temp->fetch = 1;
     return temp;
 }
 

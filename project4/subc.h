@@ -165,6 +165,7 @@ struct ste *find_func(struct decl *delcptr);
 int in_func;
 int new_label();
 int label_no;
+int string_no;
 
 #endif
 

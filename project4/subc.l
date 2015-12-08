@@ -51,26 +51,7 @@ Operators 	    [\(\)\[\]\{\}\-\,\!\+\/\%\=\&\|\;\*\.]
 	    yylval.stringVal = yytext;
 	    return yytext[0]; 
         }
-"read_int"  {
-		yylval.stringVal  = yytext;
-		return READ_INT;
-		}
-"read_char" {
-		yylval.stringVal  = yytext;
-		return READ_CHAR;
-		}
-"write_int" {
-		yylval.stringVal  = yytext;
-		return WRITE_INT;
-		}
-"write_char" {
-		yylval.stringVal = yytext;
-		return WRITE_CHAR;
-		}
-"write_string"	{
-		yylval.stringVal  = yytext;
-		return WRITE_STRING;
-		}
+
 
 
 "||" {
@@ -128,8 +109,8 @@ int main(int argc, char* argv[])
 {
     hcreate(10000); 
 
-    static char *keyword[] = { "int", "char", "void", "struct", "return", "if", "else", "while", "for", "break", "continue", NULL };
-   static int tokentype[] = { TYPE, TYPE, VOID, STRUCT, RETURN, IF, ELSE, WHILE, FOR, BREAK, CONTINUE, 0 };
+    static char *keyword[] = { "int", "char", "void", "struct", "return", "if", "else", "while", "for", "break", "continue","read_int", "read_char", "write_int", "write_char", "write_string", NULL};	
+   static int tokentype[] = { TYPE, TYPE, VOID, STRUCT, RETURN, IF, ELSE, WHILE, FOR, BREAK, CONTINUE, READ_INT, READ_CHAR, WRITE_INT, WRITE_CHAR, WRITE_STRING, 0 };
     int i;
     for(i = 0; keyword[i] != NULL; i++)
 	enter(tokentype[i], keyword[i], strlen(keyword[i]));
