@@ -28,6 +28,7 @@ struct ScopeNode{
     struct ste *top;
     struct ste *garbage_top;	//garbage ste
     struct ScopeNode *prev;
+    int	   offset;		//scope offset
 }ScopeNode;
 
 struct ScopeStack{
@@ -157,7 +158,13 @@ struct ste *pushStr(struct id *entry, struct decl *declptr);	//StrStackì— pushí
 //project4
 void Write_Command(char* command);
 void Write_Label(char* command);
-void Write_else(char* command);
+void Write_Else(char* command);
+
+int  get_field_size(struct ste *steptr);
+struct ste *find_func(struct decl *delcptr);
+int in_func;
+int new_label();
+int label_no;
 
 #endif
 

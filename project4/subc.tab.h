@@ -69,7 +69,8 @@ extern int yydebug;
     READ_INT = 279,
     READ_CHAR = 280,
     WRITE_INT = 281,
-    WRITE_STRING = 282
+    WRITE_CHAR = 282,
+    WRITE_STRING = 283
   };
 #endif
 
@@ -87,7 +88,7 @@ union YYSTYPE
 	struct decl *declptr;
 	struct ste  *steptr;
 
-#line 91 "subc.tab.h" /* yacc.c:1909  */
+#line 92 "subc.tab.h" /* yacc.c:1909  */
 };
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1

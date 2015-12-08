@@ -63,6 +63,10 @@ Operators 	    [\(\)\[\]\{\}\-\,\!\+\/\%\=\&\|\;\*\.]
 		yylval.stringVal  = yytext;
 		return WRITE_INT;
 		}
+"write_char" {
+		yylval.stringVal = yytext;
+		return WRITE_CHAR;
+		}
 "write_string"	{
 		yylval.stringVal  = yytext;
 		return WRITE_STRING;
@@ -130,8 +134,6 @@ int main(int argc, char* argv[])
     for(i = 0; keyword[i] != NULL; i++)
 	enter(tokentype[i], keyword[i], strlen(keyword[i]));
 
-    init_type();
-
     if(argc >= 3)
     {
 	yyin = fopen(argv[1], "r");
@@ -139,7 +141,7 @@ int main(int argc, char* argv[])
 	filename = (char*)malloc(sizeof(char)*strlen(argv[1]));
 	strcpy(filename, argv[1]);
     }
-    if(argc == 2)
+    else if(argc == 2)
     {
 	yyin = fopen(argv[1], "r");
 	file_out = NULL;
@@ -157,6 +159,7 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
+    init_type();
 	
     yyparse();
     fclose(yyin);

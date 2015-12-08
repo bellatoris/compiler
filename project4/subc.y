@@ -18,8 +18,8 @@ void    REDUCE(char* s);
 	struct decl *declptr;
 	struct ste  *steptr;
 }
- %type<declptr>	    ext_def type_specifier struct_specifier func_decl pointers param_list param_decl def_list def local_defs expr_e expr or_expr or_list and_expr and_list binary unary args const_expr
-
+%type<declptr>	    ext_def type_specifier struct_specifier func_decl pointers param_list param_decl  expr_e expr or_expr or_list and_expr and_list binary unary args const_expr
+%type<intVal>	    def def_list local_defs
 %nonassoc<idptr>    ID TYPE VOID
 /* Precedences and Associativities */
 
@@ -57,10 +57,15 @@ void    REDUCE(char* s);
 %token		    READ_INT
 %token		    READ_CHAR
 %token		    WRITE_INT
+%token		    WRITE_CHAR
 %token		    WRITE_STRING
 
 %%
-program: ext_def_list
+program: ext_def_list {
+		char command[100];
+		sprintf(command,"Lglob.data %d",Global_Scope->offset); 
+		Write_Else(command);
+    }
    ;
 ext_def_list: ext_def_list ext_def
         | /* empty */ {
@@ -71,8 +76,8 @@ ext_def
 		: type_specifier pointers ID ';' {
 		    if($1 && !check_is_declared_for_else($3)) 
 		    {
-			declare($3, makevardecl($2? $2:$1));
-			SStack.TOP->top->decl->scope = Global_Scope;
+			struct decl *temp = declare($3, makevardecl($2? $2:$1))->decl;
+			temp->argument = 0;
 			//printStack(SStack.TOP->top);
 			//printStack(StrStack);
 		    }
@@ -84,7 +89,8 @@ ext_def
 		| type_specifier pointers ID '[' const_expr ']' ';' {
 		    if($1 && $5 && !check_is_declared_for_else($3))
 		    {
-			declare($3, makeconstdecl(makearraydecl($5->intvalue, makevardecl($2? $2:$1))));
+			struct decl *temp = declare($3, makeconstdecl(makearraydecl($5->intvalue, makevardecl($2? $2:$1))))->decl;
+			temp->argument = 0;			
 		    }
 		    else
 		    {
@@ -95,7 +101,20 @@ ext_def
 		}
 		| type_specifier ';' {
 		}
-		| func_decl compound_stmt
+		| func_decl {
+		    struct id* func_name = find_func($1)->name;
+		    Write_Label(func_name->name);
+		} compound_stmt {
+		    struct id* func_name = find_func($1)->name;
+		    char command[100];
+		    sprintf(command,"%s_final",func_name->name); 
+		    Write_Label(command);
+		    Write_Command("push_reg fp");
+		    Write_Command("pop_reg sp");
+		    Write_Command("pop_reg fp");
+		    Write_Command("pop_reg pc");
+		    sprintf(command,"%s_end",func_name->name); 
+		}
 ;
 
 type_specifier
@@ -135,7 +154,12 @@ struct_specifier
 		}		    
 		    def_list '}' /* popscope reverses stes */{
 		    struct ste *fields = pop_scope();
-		    if(!$<declptr>4)
+		    if(!fields)
+		    {
+			yyerror("struct has no fields");
+			$$ = NULL;
+		    }
+		    else if(!$<declptr>4)
 		    {
 			pushStr($2, $$ = makestructdecl(fields));
 		    }
@@ -339,7 +363,7 @@ param_decl  /* formal parameter declaration */
 		: type_specifier pointers ID {
 		    if($1 && !check_is_declared_for_else($3))
 		    {
-			declare($3, $$ = makevardecl($2? $2:$1));
+			struct decl *temp = declare($3, $$ = makevardecl($2? $2:$1))->decl;
 		    }
 		    else
 		    {
@@ -349,7 +373,7 @@ param_decl  /* formal parameter declaration */
 		| type_specifier pointers ID '[' const_expr ']' {
 		    if($1 && $5 && !check_is_declared_for_else($3))
 		    {
-			declare($3, $$ = makeconstdecl(makearraydecl($5->intvalue, makevardecl($2? $2:$1))));
+			struct decl *temp = declare($3, $$ = makeconstdecl(makearraydecl($5->intvalue, makevardecl($2? $2:$1))))->decl;
 		    }
 		    else
 		    {
@@ -359,62 +383,82 @@ param_decl  /* formal parameter declaration */
 ;
 def_list    /* list of definitions, definition can be type(struct), variable, function */
 		: def_list def {
+		    $$ = $1 + $2;
 		}
 		| /* empty */ {
+		    $$ = 0;
 		}
 ;
 def
 		: type_specifier pointers ID ';'{
 		    if($1 && !check_is_declared_for_else($3))
 		    {
-			declare($3, makevardecl($2? $2:$1));
+			struct decl *temp = declare($3, makevardecl($2? $2:$1))->decl;
+			$$ = temp->size;
 		    }
 		    else
 		    {
-			$$ = NULL;
+			$$ = 0;
 		    }
 		}
 		| type_specifier pointers ID '[' const_expr ']' ';' {
 		    if($1 && $5 && !check_is_declared_for_else($3))
 		    {
-			declare($3, makeconstdecl(makearraydecl($5->intvalue, makevardecl($2? $2:$1))));
+			struct decl *temp = declare($3, makeconstdecl(makearraydecl($5->intvalue, makevardecl($2? $2:$1))))->decl;
+			$$ = temp->size;
 		    }
 		    else
 		    {
-			$$= NULL;
+			$$= 0;
 		    }
 		}
 		| type_specifier ';' {
 		    if(!$1)
 		    {
-			$$ = NULL;
+			$$ = 0;
 		    }
 		}
 		| func_decl ';' {
 		    if(!$1)
 		    {
-			$$ = NULL;
+			$$ = 0;
 		    }
 		}
 ;
 compound_stmt
 		: '{'{
 		    push_scope();
-		    if($<declptr>0 && !finddecl(returnid))
+		    if($<declptr>-1 && !finddecl(returnid))
 		    {
-			push_ste_list($<declptr>0->formals);
+			push_ste_list($<declptr>-1->formals);
+			$<intVal>$ = 1;
 		    }
-		} local_defs stmt_list '}' {
+		    else
+			$<intVal>$ = 0;
+		} local_defs {
+		    if($<intVal>2)
+		    {
+			struct id *func_name = find_func($<declptr>-1)->name;
+			char command[100];
+			sprintf(command, "shift_sp %d", $3);
+			Write_Command(command);
+			sprintf(command, "%s_start", func_name->name);
+			Write_Label(command);
+			in_func = 1;
+		    }
+		} stmt_list '}' {
 		    //free_scope();
 		    pop_scope();
-		    if($<declptr>0 && !finddecl(returnid))
+		    if($<declptr>-1 && !finddecl(returnid))
 		    {
-			$<declptr>0->isdeclared = 1;
+			$<declptr>-1->isdeclared = 1;
+			in_func = 0;
 		    }
 		}
 ;
 local_defs  /* local definitions, of which scope is only inside of compound statement */
 		: def_list {
+		    $$ = $1;
 		}
 ;
 stmt_list
@@ -442,7 +486,19 @@ stmt
 		| WHILE '(' expr ')' stmt 
 		| FOR '(' expr_e ';' expr_e ';' expr_e ')' stmt 
 		| BREAK ';'
-		| CONTINUE ';' 
+		| CONTINUE ';'
+		| READ_INT '(' expr ')' {
+
+		}
+		| READ_CHAR '(' expr ')' {
+
+		}
+		| WRITE_INT '(' expr ')' {
+		}
+		| WRITE_CHAR '(' expr ')' {
+		}
+		| WRITE_STRING '(' expr ')' {
+		}
 ;
 expr_e
 		: expr
@@ -458,7 +514,13 @@ const_expr
 		    //check index type
 		    else if(check_compatible_type($1->type, inttype))
 		    {
-			$$ = $1;
+			if($1->declclass == Hash("CONST"))
+			    $$ = $1;
+			else
+			{
+			    yyerror("index is must const");
+			    $$ = NULL;
+			}
 		    }
 		    else
 		    {
@@ -468,16 +530,25 @@ const_expr
 		}
 ;
 expr
-		: unary '=' expr {
-		    if(!$1 || !$3)
+		: unary {
+		    Write_Command("push_reg sp");
+		    Write_Command("fetch");
+		}'=' expr {
+		    if(!$1 || !$4)
 		    {
 			$$ = NULL;
 		    }
 		    else if(check_is_var_type($1))
 		    {
-			if(check_compatible($1->type, $3->type))
+			if(check_compatible($1->type, $4->type))
 			{
 			    $$ = $1;
+			    $1->intvalue = $4->intvalue;
+			    $1->charvalue = $4->charvalue;
+			    $1->stringvalue = $4->stringvalue;
+			    Write_Command("assign");
+			    Write_Command("fetch");
+			    Write_Command("shift_sp -1");
 			}
 			else
 			{
@@ -578,14 +649,17 @@ binary
 			$$ = NULL;
 		    }
 		}
-		| binary '-' binary {
-		    if(!$1 || !$3)
+		| binary '-'{
+		    Write_Command("fetch");
+		} binary {
+		    if(!$1 || !$4)
 		    {
 			$$ = NULL;
 		    }
-		    else if(minustype($1->type, $3->type))
+		    else if(minustype($1->type, $4->type))
 		    {
 			$$ = $1;
+			Write_Command("sub");
 		    }
 		    else
 		    { 
@@ -614,6 +688,12 @@ unary
 		}
 		| INTEGER_CONST {
 		    $$ = makenumconstdecl(inttype, $1);
+		    if(in_func)
+		    {
+			char command[100];
+			sprintf(command, "push_const %d", $1);
+			Write_Command(command);
+		    }
 		}
 		| CHAR_CONST {
 		    $$ = makecharconstdecl(chartype, $1);
@@ -625,6 +705,23 @@ unary
 		    if(finddecl($1))
 		    {
 			$$ = finddecl($1);
+			if($$->scope == Global_Scope)
+			{
+			    char command[100];
+			    sprintf(command, "push_const Lglob+%d", $$->offset);
+			    Write_Command(command);
+			    Write_Command("add");
+			    $$->fetch = 1;
+			}
+			else
+			{
+			    Write_Command("push_reg fp");
+			    char command[100];
+			    sprintf(command, "push_const %d", $$->offset);
+			    Write_Command(command);
+			    Write_Command("add");
+			    $$->fetch = 1;
+			}
 		    }
 		    else
 		    {
@@ -637,6 +734,8 @@ unary
 		    if($2 && check_compatible_type($2->type, inttype))
 		    {
 			$$ = $2;
+			Write_Command("fetch");
+			Write_Command("negate");
 		    }
 		    else
 		    {
@@ -648,6 +747,8 @@ unary
 		    if($2 && check_compatible_type($2->type, inttype))
 		    {
 			$$ = $2;
+			Write_Command("fetch");
+			Write_Command("not");
 		    }
 		    else
 		    {
@@ -659,13 +760,17 @@ unary
 		    if($1 && !INDECOPtype($1->type))
 			$$ = NULL;
 		    else
+		    {
 			$$ =$1;
+		    }
 		}
 		| unary DECOP {
 		    if($1 && !INDECOPtype($1->type))
 			$$ = NULL;
 		    else
+		    {
 			$$ = $1;
+		    }
 		}
 		| INCOP unary {
 		    if($2 && !INDECOPtype($2->type))
@@ -725,6 +830,12 @@ unary
 		    else if(check_is_const_type($1))
 		    {
 			$$ = arrayaccess($1, $3->type);
+			char command[100];
+			sprintf(command, "push_const %d", $1->type->elementvar->size);
+			Write_Command("fetch");
+			Write_Command(command);
+			Write_Command("mul");
+			Write_Command("add");
 		    }
 		    else
 		    {
@@ -735,6 +846,10 @@ unary
 		    if(check_is_var_type($1))
 		    {
 			$$ = structaccess($1, $3);
+			char command[100];
+			sprintf(command, "push_const %d", $$->offset);
+			Write_Command(command);
+			Write_Command("add");
 		    }
 		    else
 		    {
@@ -843,7 +958,7 @@ void Write_Label(char* command)
 	printf("%s:\n", command);
     }
 }
-void Write_else(char* command)
+void Write_Else(char* command)
 {
     if(file_out)
     {
@@ -855,6 +970,37 @@ void Write_else(char* command)
     }
 }
 
+
+int get_field_size(struct ste *steptr)
+{
+    int size = 0;
+    struct ste *temp = steptr;
+    while(temp)
+    {
+	size += temp->decl->size;
+	temp = temp->prev;
+    }
+    return size;
+}
+
+struct ste *find_func(struct decl *declptr)
+{
+    struct ste *temp = SStack.TOP->top;
+    while(temp)
+    {
+	if(temp->decl == declptr)
+	{
+	    return temp;
+	}
+	temp = temp->prev;
+    }
+    return NULL;
+}
+
+int new_label()
+{
+    return label_no++;
+}
 
 
 int    yyerror (char* s)
@@ -880,6 +1026,7 @@ void init_type()
     SStack.TOP->prev = NULL;
     SStack.TOP->top = NULL;
     SStack.TOP->garbage_top = NULL;
+    SStack.TOP->offset = 0;
     StrStack = NULL;
 
     Global_Scope = SStack.TOP;	//global scope
@@ -889,10 +1036,21 @@ void init_type()
     chartype = maketypedecl(Hash("char"));
     voidtype = maketypedecl(VOID);
 
-    declare(enter(TYPE, "int", 3), inttype);
-    declare(enter(TYPE, "char", 4), chartype);
-    declare(enter(VOID, "void", 4), voidtype);
+    declare(enter(TYPE, "int", 3), inttype)->decl->size = 1;
+    declare(enter(TYPE, "char", 4), chartype)->decl->size = 1;
+    declare(enter(VOID, "void", 4), voidtype)->decl->size = 1;
     returnid = enter(ID, "*return", 7);
+    in_func = 0;
+    label_no = 0;
+
+    Write_Command("shift_sp 1");
+    Write_Command("push_const EXIT");
+    Write_Command("push_reg fp");
+    Write_Command("push_reg sp");
+    Write_Command("pop_reg fp");
+    Write_Command("jump main");
+    Write_Label("EXIT");
+    Write_Command("exit");
 }
 
 struct ste *push_scope()	/* SStack.TOP에다가 새로히 ScopeNode를 만들고 연결 시킨다. */
@@ -902,6 +1060,7 @@ struct ste *push_scope()	/* SStack.TOP에다가 새로히 ScopeNode를 만들고
     SStack.TOP->prev = temp;
     SStack.TOP->top = temp->top;
     SStack.TOP->garbage_top = temp->garbage_top;
+    SStack.TOP->offset = 0;
     return SStack.TOP->top;
 }
 
@@ -1003,7 +1162,8 @@ struct ste *push_ste_list(struct ste *formals)	//완벽한 deep copy를 해준�
     struct ste *ftemp = formals;
     while(ftemp)
     {
-	if(ftemp->decl->declclass == TYPE)  //returnid의 경우 decl이 바로 TYPE을 가리키므로 ftemp->decl을 바로 사용한다.
+	declare(ftemp->name, ftemp->decl);
+	/*if(ftemp->decl->declclass == TYPE)  //returnid의 경우 decl이 바로 TYPE을 가리키므로 ftemp->decl을 바로 사용한다.
 	{
 	    if(ftemp->decl->typeclass == Hash("ptr"))
 	    {
@@ -1032,7 +1192,7 @@ struct ste *push_ste_list(struct ste *formals)	//완벽한 deep copy를 해준�
 	else	//그 외의 경우 그냥 decl->type을 사용해서 deepcopy한다.
 	{
 	    declare(ftemp->name, makevardecl(ftemp->decl->type));
-	}
+	}*/
 	ftemp = ftemp->prev;
     }
     return SStack.TOP->top;
@@ -1047,7 +1207,7 @@ struct ste *pop_scope()		/* 현재 SStack.TOP->prev가 가르키는 ste까지 �
 
     if(temp == temp3)	/* push_scope()하고 아무것도 추가하지 않은 경우 */
     {
-	free(SStack.TOP);
+	//free(SStack.TOP);
 	SStack.TOP = SStack.TOP->prev;
 	return NULL;
     }
@@ -1127,6 +1287,9 @@ struct ste *insert(id *entry, struct decl *declptr)	/* declare와 똑같은 함�
     STE->decl = declptr;		    /* decl에 declptr를 넣는다 */
     STE->prev = SStack.TOP->top;	    /* SStack.TOP->top을 prev에 넣는다. */
     SStack.TOP->top = STE;		    /* SStack.TOP->top를 새로운 ste로 바꿔준다. */
+    declptr->scope = SStack.TOP;
+    declptr->offset = SStack.TOP->offset;
+    SStack.TOP->offset += declptr->size;
     return SStack.TOP->top;
 }
 
@@ -1285,6 +1448,7 @@ struct decl *makevardecl(struct decl *typeptr)	/* vardecl을 만든다 */
     struct decl *temp = (struct decl*)malloc(sizeof(struct decl));
     temp->declclass = Hash("VAR");
     temp->type = typeptr;
+    temp->size = typeptr->size;
     return temp;
 }
 
@@ -1294,6 +1458,7 @@ struct decl *makeptrdecl(struct decl *typeptr)
     temp->ptrto = typeptr;
     temp->typeclass = Hash("ptr");
     temp->declclass = TYPE;
+    temp->size = 1;
     return temp;
 }
 
@@ -1304,6 +1469,7 @@ struct decl *makearraydecl(int numidx, struct decl *varptr)
     temp->declclass = TYPE;
     temp->num_index = numidx;
     temp->typeclass = Hash("array");
+    temp->size = numidx * (temp->elementvar->size);
     return temp;
 }
 
@@ -1313,6 +1479,7 @@ struct decl *makestructdecl(struct ste *fieldptr)
     temp->fieldlist = fieldptr;
     temp->declclass = TYPE;
     temp->typeclass = Hash("struct");
+    temp->size = get_field_size(fieldptr);
     return temp;
 }
 
@@ -1321,6 +1488,7 @@ struct decl *makeconstdecl(struct decl *typeptr)
     struct decl *temp = (struct decl*)malloc(sizeof(struct decl));
     temp->declclass = Hash("CONST");
     temp->type = typeptr;
+    temp->size = typeptr->size;
     return temp;
 }
 
@@ -1330,6 +1498,7 @@ struct decl *makenumconstdecl(struct decl *typeptr, int intconst)
     temp->declclass = Hash("CONST");
     temp->type = typeptr;
     temp->intvalue = intconst;
+    temp->size = typeptr->size;
     return temp;
 }
 
@@ -1339,6 +1508,7 @@ struct decl *makecharconstdecl(struct decl *typeptr, char *charconst)
     temp->declclass = Hash("CONST");
     temp->type = typeptr;
     temp->charvalue = charconst;
+    temp->size = typeptr->size;
     return temp;
 }
 
@@ -1348,6 +1518,7 @@ struct decl *makestringconstdecl(struct decl *typeptr, const char* stringconst)
     temp->declclass = Hash("CONST");
     temp->type = makeptrdecl(typeptr);
     temp->stringvalue = stringconst;
+    temp->size = strlen(stringconst);
     return temp;
 }
 
@@ -1746,7 +1917,8 @@ struct decl *check_function_call(struct decl *procptr, struct decl *actuals)
 	return NULL;
     }
 
-    return deep_copy(procptr->returntype);  /* for decl of the call */
+//    return deep_copy(procptr->returntype);  /* for decl of the call */
+    return makeconstdecl(procptr->returntype);
 }
 
 struct decl *check_function_declare(struct decl *procptr, struct decl *procptr2)
