@@ -52,6 +52,30 @@ Operators 	    [\(\)\[\]\{\}\-\,\!\+\/\%\=\&\|\;\*\.]
 	    return yytext[0]; 
         }
 
+
+"read_int"	{ 
+			yylval.stringVal  = yytext;
+			return READ_INT;
+		}
+"read_char" {
+			yylval.stringVal  = yytext;
+			return READ_CHAR;
+		}
+"write_int"	{
+			yylval.stringVal  = yytext;
+			return WRITE_INT;
+		}
+"write_string"	{
+			yylval.stringVal  = yytext;
+			return WRITE_STRING;
+		}
+"int" 	|
+"char"	{	
+			struct id* entered = enter(ID, yytext, yyleng);
+			yylval.idptr = entered; 
+			return TYPE; 
+		}
+
     /*"+="|"-="|"*="|"/="|"%=" {
            yylval.stringVal = yytext;
 	       return ASSIGNOP;
@@ -120,7 +144,13 @@ int main(int argc, char* argv[])
 
     init_type();
 
-    if(argc >= 2)
+    if(argc >= 3){
+	 yyin = fopen(argv[1], "r");
+	 file_out = fopen(argv[2], "w");
+	 filename = (char*)malloc(sizeof(char)*strlen(argv[1]));
+	 strcpy(filename, argv[1]);
+    }
+    if(argc == 2)
     {
 	yyin = fopen(argv[1], "r");
 	filename = (char*)malloc(sizeof(char)*strlen(argv[1]));

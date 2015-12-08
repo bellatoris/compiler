@@ -65,7 +65,11 @@ extern int yydebug;
     WHILE = 275,
     FOR = 276,
     BREAK = 277,
-    CONTINUE = 278
+    CONTINUE = 278,
+    READ_INT = 279,
+    READ_CHAR = 280,
+    WRITE_INT = 281,
+    WRITE_STRING = 282
   };
 #endif
 
@@ -83,7 +87,7 @@ union YYSTYPE
 	struct decl *declptr;
 	struct ste  *steptr;
 
-#line 87 "subc.tab.h" /* yacc.c:1909  */
+#line 91 "subc.tab.h" /* yacc.c:1909  */
 };
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1

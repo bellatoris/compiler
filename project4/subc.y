@@ -54,6 +54,10 @@ void    REDUCE(char* s);
 %token              EQUOP
 %token              INCOP
 %token		    DECOP
+%token		    READ_INT
+%token		    READ_CHAR
+%token		    WRITE_INT
+%token		    WRITE_STRING
 
 %%
 program: ext_def_list
@@ -608,9 +612,19 @@ unary
 		}
 		| INTEGER_CONST {
 		    garbage_insert($$ = makenumconstdecl(inttype, $1));
+		    char command[100];
+		    sprintf(command,"push_const %d", $1); 
+		    WriteCommand(command);
+		    $$->fetch = 0;
+		    $$->size = 1;
 		}
 		| CHAR_CONST {
 		    garbage_insert($$ = makecharconstdecl(chartype, $1));
+		    char command[100];
+		    sprintf(command, "push_const %d",($$->charvalue)[0]);
+		    WriteCommand(command);
+		    $$->fetch = 0;
+		    $$->size = 1;
 		}
 		| STRING {
 		    garbage_insert($$ = makestringconstdecl(chartype, $1));
@@ -837,6 +851,8 @@ void init_type()
     SStack.TOP->top = NULL;
     SStack.TOP->garbage_top = NULL;
     StrStack = NULL;
+
+    Global_Scope = SStack.TOP;	//set the global scope
 
     inttype = maketypedecl(Hash("int"));
     chartype = maketypedecl(Hash("char"));
@@ -1960,3 +1976,24 @@ struct ste *pushStr(struct id *entry, struct decl *declptr) //struct stack의 pu
     StrStack->prev = temp;
     return StrStack;
 }
+
+
+
+
+
+//project4
+
+void WriteCommand(char* command){
+	fprintf(file_out,"%s\n",command);
+}
+
+void WriteLabel(char* command){
+	fprintf(file_out,"%s:\n",command);
+}
+
+void WriteAny(char* command){
+	fprintf(file_out,"%s\n",command);
+}
+
+
+

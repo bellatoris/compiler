@@ -64,8 +64,17 @@ struct decl{
     struct ste	    *fieldlist;	/* TYPE(struct): ptr to field list	*/
     struct decl	    *ptrto;	/* TYPE(pointer): type of the pointer	*/
     int		    size;	/* ALL: size in bytes			*/
-    struct ste	    **scope;	/* VAR: scope when VAR delcared		*/
+//    struct ste	    **scope;	/* VAR: scope when VAR delcared		*/
     struct decl	    *next;	/* For list_of_variables declarations	*/
+
+
+
+//project4
+    int 	    offset;
+    int		    fetch;
+    int		    argument;
+    struct ScopeNode *scope;	/* scope: when VAR declared		*/
+
 }decl;				/* Or parameter check of function call	*/
 /* For hash table */
 
@@ -123,6 +132,7 @@ struct decl *check_is_declared_for_struct(struct id *entry);	//entry를 가진 s
 
 
 struct ScopeStack SStack;
+struct ScopeNode *Global_Scope;
 struct ste *StrStack;
 struct decl *inttype;
 struct decl *chartype;
@@ -135,4 +145,17 @@ void printStack(struct ste *top);
 void tellmetype(struct decl *declptr);
 struct ste *pushStr(struct id *entry, struct decl *declptr);	//StrStack에 push한다.
 #endif
+
+
+
+
+
+//project 4
+
+FILE *file_out;
+void WriteCommand(char* command);
+void WriteLabel(char* command);
+void WriteAny(char* command);
+
+
 
