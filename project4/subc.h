@@ -34,6 +34,15 @@ struct ScopeStack{
     struct ScopeNode *TOP;
 }ScopeStack;
 
+
+struct Property{
+    int fetch;
+    int offset;
+    int size;
+}Property;
+
+
+
 struct ste *push_scope();
 struct decl *deep_copy(struct decl *declptr);
 struct decl *deep_copy_pointer(struct decl *declptr);
@@ -67,14 +76,11 @@ struct decl{
 //    struct ste	    **scope;	/* VAR: scope when VAR delcared		*/
     struct decl	    *next;	/* For list_of_variables declarations	*/
 
-
-
-//project4
-    int 	    offset;
+    //project4
     int		    fetch;
+    int		    offset;
     int		    argument;
-    struct ScopeNode *scope;	/* scope: when VAR declared		*/
-
+    struct ScopeNode *scope;   /* scope: when VAR declared	    */
 }decl;				/* Or parameter check of function call	*/
 /* For hash table */
 
@@ -139,23 +145,19 @@ struct decl *chartype;
 struct decl *voidtype;
 struct id* returnid;
 char *filename;
+FILE *file_out;
 
 unsigned int Hash(const char *key);	//VAR ptr array struct CONST FUNC
 void printStack(struct ste *top);
 void tellmetype(struct decl *declptr);
 struct ste *pushStr(struct id *entry, struct decl *declptr);	//StrStack에 push한다.
+
+
+
+//project4
+void Write_Command(char* command);
+void Write_Label(char* command);
+void Write_else(char* command);
+
 #endif
-
-
-
-
-
-//project 4
-
-FILE *file_out;
-void WriteCommand(char* command);
-void WriteLabel(char* command);
-void WriteAny(char* command);
-
-
 

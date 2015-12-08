@@ -51,35 +51,23 @@ Operators 	    [\(\)\[\]\{\}\-\,\!\+\/\%\=\&\|\;\*\.]
 	    yylval.stringVal = yytext;
 	    return yytext[0]; 
         }
-
-
-"read_int"	{ 
-			yylval.stringVal  = yytext;
-			return READ_INT;
+"read_int"  {
+		yylval.stringVal  = yytext;
+		return READ_INT;
 		}
 "read_char" {
-			yylval.stringVal  = yytext;
-			return READ_CHAR;
+		yylval.stringVal  = yytext;
+		return READ_CHAR;
 		}
-"write_int"	{
-			yylval.stringVal  = yytext;
-			return WRITE_INT;
+"write_int" {
+		yylval.stringVal  = yytext;
+		return WRITE_INT;
 		}
 "write_string"	{
-			yylval.stringVal  = yytext;
-			return WRITE_STRING;
-		}
-"int" 	|
-"char"	{	
-			struct id* entered = enter(ID, yytext, yyleng);
-			yylval.idptr = entered; 
-			return TYPE; 
+		yylval.stringVal  = yytext;
+		return WRITE_STRING;
 		}
 
-    /*"+="|"-="|"*="|"/="|"%=" {
-           yylval.stringVal = yytext;
-	       return ASSIGNOP;
-        }*/
 
 "||" {
 		   yylval.stringVal = yytext;
@@ -144,21 +132,24 @@ int main(int argc, char* argv[])
 
     init_type();
 
-    if(argc >= 3){
-	 yyin = fopen(argv[1], "r");
-	 file_out = fopen(argv[2], "w");
-	 filename = (char*)malloc(sizeof(char)*strlen(argv[1]));
-	 strcpy(filename, argv[1]);
+    if(argc >= 3)
+    {
+	yyin = fopen(argv[1], "r");
+	file_out = fopen(argv[2], "w");
+	filename = (char*)malloc(sizeof(char)*strlen(argv[1]));
+	strcpy(filename, argv[1]);
     }
     if(argc == 2)
     {
 	yyin = fopen(argv[1], "r");
+	file_out = NULL;
 	filename = (char*)malloc(sizeof(char)*strlen(argv[1]));
 	strcpy(filename, argv[1]);
     }
     else
     {
 	yyin = stdin;
+	file_out = NULL;
 	filename = NULL;
     }
     if(!yyin) {
@@ -170,7 +161,7 @@ int main(int argc, char* argv[])
     yyparse();
     fclose(yyin);
 //    printStack(SStack.TOP->top);
-    sdestroy();
+//    sdestroy();
     hdestroy();
     return 0;
 }

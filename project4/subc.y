@@ -71,7 +71,8 @@ ext_def
 		: type_specifier pointers ID ';' {
 		    if($1 && !check_is_declared_for_else($3)) 
 		    {
-			declare($3, makevardecl($2? $2:$1)); 
+			declare($3, makevardecl($2? $2:$1));
+			SStack.TOP->top->decl->scope = Global_Scope;
 			//printStack(SStack.TOP->top);
 			//printStack(StrStack);
 		    }
@@ -141,7 +142,7 @@ struct_specifier
 		    else
 		    {
 			//error
-			free_ste_list(fields);
+			//free_ste_list(fields);
 			$$ = NULL;
 		    }
 		}
@@ -201,15 +202,15 @@ func_decl
 			}
 			procdecl->returntype = NULL;
 			procdecl->formals = NULL;
-			free(procdecl);
-			free_ste_list(formals);
+			//free(procdecl);
+			//free_ste_list(formals);
 		    }
 		    else
 		    {
 			procdecl->returntype = NULL;
 			procdecl->formals = NULL;
-			free(procdecl);
-			free_ste_list(formals);
+			//free(procdecl);
+			//free_ste_list(formals);
 			$$ = NULL;
 		    }
 		}
@@ -243,15 +244,15 @@ func_decl
 			}
 			procdecl->returntype = NULL;
 			procdecl->formals = NULL;
-			free(procdecl);
-			free_ste_list(formals);
+			//free(procdecl);
+			//free_ste_list(formals);
 		    }
 		    else
 		    {
 			procdecl->returntype = NULL;
 			procdecl->formals = NULL;
-			free(procdecl);
-			free_ste_list(formals);
+			//free(procdecl);
+			//free_ste_list(formals);
 			$$ = NULL;
 		    }
 		}
@@ -291,8 +292,8 @@ func_decl
 			procdecl->formals = NULL;
 			procdecl->elementvar = NULL;
 			procdecl->returntype = NULL;
-			free(procdecl);
-			free_ste_list(formals);
+			//free(procdecl);
+			//free_ste_list(formals);
 		    }
 		    //push_scope(); /* for installing formals & locals in this scope */
 		    //pushstelist(formals); 
@@ -301,8 +302,8 @@ func_decl
 			procdecl->formals = NULL;
 			procdecl->elementvar = NULL;
 			procdecl->returntype = NULL;
-			free(procdecl);
-			free_ste_list(formals);
+			//free(procdecl);
+			//free_ste_list(formals);
 			$$ = NULL;
 		    }
 		}
@@ -402,9 +403,10 @@ compound_stmt
 		    if($<declptr>0 && !finddecl(returnid))
 		    {
 			push_ste_list($<declptr>0->formals);
-		    } 
+		    }
 		} local_defs stmt_list '}' {
-		    free_scope();
+		    //free_scope();
+		    pop_scope();
 		    if($<declptr>0 && !finddecl(returnid))
 		    {
 			$<declptr>0->isdeclared = 1;
@@ -541,7 +543,7 @@ binary
 		    }
 		    else if(reloptype($1->type, $3->type))
 		    {
-			garbage_insert($$ = makeconstdecl(inttype));
+			$$ = makeconstdecl(inttype);
 		    }
 		    else
 		    {
@@ -555,7 +557,7 @@ binary
 		    }
 		    else if(equoptype($1->type, $3->type))
 		    {
-			garbage_insert($$ = makeconstdecl(inttype));
+			$$ = makeconstdecl(inttype);
 		    }
 		    else
 		    {
@@ -600,7 +602,7 @@ binary
 unary
 		: '(' expr ')' {
 		    if($2)  // it made by const decl!!
-			$$ = deep_copy($2->type);
+			$$ = makeconstdecl($2->type);
 		    else
 			$$ = NULL;
 		}
@@ -611,23 +613,13 @@ unary
 			$$ = NULL;
 		}
 		| INTEGER_CONST {
-		    garbage_insert($$ = makenumconstdecl(inttype, $1));
-		    char command[100];
-		    sprintf(command,"push_const %d", $1); 
-		    WriteCommand(command);
-		    $$->fetch = 0;
-		    $$->size = 1;
+		    $$ = makenumconstdecl(inttype, $1);
 		}
 		| CHAR_CONST {
-		    garbage_insert($$ = makecharconstdecl(chartype, $1));
-		    char command[100];
-		    sprintf(command, "push_const %d",($$->charvalue)[0]);
-		    WriteCommand(command);
-		    $$->fetch = 0;
-		    $$->size = 1;
+		    $$ = makecharconstdecl(chartype, $1);
 		}
 		| STRING {
-		    garbage_insert($$ = makestringconstdecl(chartype, $1));
+		    $$ = makestringconstdecl(chartype, $1);
 		}
 		| ID {
 		    if(finddecl($1))
@@ -693,7 +685,7 @@ unary
 			struct decl *temp;
 			if(temp = deep_copy_pointer($2->type))
 			{
-			    garbage_insert($$ = makeconstdecl(temp));
+			    $$ = makeconstdecl(temp);
 			}
 			else
 			    $$ = NULL;
@@ -712,7 +704,7 @@ unary
 			struct decl *temp;
 			if(temp = deep_copy_variable($2->type->ptrto))
 			{
-			    garbage_insert($$ = temp);
+			    $$ = temp;
 			}
 			else
 			    $$ = NULL;
@@ -827,6 +819,44 @@ args    /* actual parameters(function arguments) transferred to function */
 /*  Additional C Codes 
  	Implemnt REDUCE function here */
 
+
+//project4
+void Write_Command(char* command)
+{
+    if(file_out)
+    {
+	fprintf(file_out,"\t%s\n", command);
+    }
+    else
+    {
+	printf("\t%s\n", command);
+    }
+}
+void Write_Label(char* command)
+{
+    if(file_out)
+    {
+	fprintf(file_out,"%s:\n", command);
+    }
+    else
+    {
+	printf("%s:\n", command);
+    }
+}
+void Write_else(char* command)
+{
+    if(file_out)
+    {
+	fprintf(file_out,"%s\n", command);
+    }
+    else
+    {
+	printf("%s\n",command);
+    }
+}
+
+
+
 int    yyerror (char* s)
 {
     if(filename)
@@ -852,7 +882,8 @@ void init_type()
     SStack.TOP->garbage_top = NULL;
     StrStack = NULL;
 
-    Global_Scope = SStack.TOP;	//set the global scope
+    Global_Scope = SStack.TOP;	//global scope
+
 
     inttype = maketypedecl(Hash("int"));
     chartype = maketypedecl(Hash("char"));
@@ -1029,7 +1060,7 @@ struct ste *pop_scope()		/* 현재 SStack.TOP->prev가 가르키는 ste까지 �
 	Head->prev = headtemp;
 	temp = stacktemp;
     }
-    
+    /*
     struct ste *garbage_temp = SStack.TOP->garbage_top;
     struct ste *garbage_temp3 = SStack.TOP->prev->garbage_top;
     while(garbage_temp != garbage_temp3)
@@ -1039,6 +1070,7 @@ struct ste *pop_scope()		/* 현재 SStack.TOP->prev가 가르키는 ste까지 �
     }
     
     free(SStack.TOP);
+    */
     SStack.TOP = SStack.TOP->prev;      /* SStack.TOP의 scope를 한단계 낮춘다. */
 
     return Head;
@@ -1976,24 +2008,3 @@ struct ste *pushStr(struct id *entry, struct decl *declptr) //struct stack의 pu
     StrStack->prev = temp;
     return StrStack;
 }
-
-
-
-
-
-//project4
-
-void WriteCommand(char* command){
-	fprintf(file_out,"%s\n",command);
-}
-
-void WriteLabel(char* command){
-	fprintf(file_out,"%s:\n",command);
-}
-
-void WriteAny(char* command){
-	fprintf(file_out,"%s\n",command);
-}
-
-
-
