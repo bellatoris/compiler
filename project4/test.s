@@ -6,37 +6,276 @@
 	jump main
 EXIT:
 	exit
-main:
-	shift_sp 84
-main_start:
+
+This variable's name is c
+/**** Speak To Me ****/
+Declclass is VAR
+
+look the type decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is b
+/**** Speak To Me ****/
+Declclass is VAR
+
+look the type decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is a
+/**** Speak To Me ****/
+Declclass is VAR
+
+look the type decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is *return
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is void
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is VOID
+
+
+This variable's name is char
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is CHAR
+
+
+This variable's name is int
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is c
+/**** Speak To Me ****/
+Declclass is VAR
+
+look the type decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is c
+/**** Speak To Me ****/
+Declclass is VAR
+
+look the type decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is c
+/**** Speak To Me ****/
+Declclass is VAR
+
+look the type decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+test:
+	shift_sp 0
+test_start:
 	push_reg fp
-	push_const 5
+	push_const -1
+	add
+	push_const -1
 	add
 	push_reg fp
 	push_const 1
 	add
+c
 	fetch
-	push_const 8
-	mul
-	add
-	push_const 2
-	add
-	push_const 1
-	add
-	push_const 3
-	fetch
-	push_const 1
-	mul
-	add
-	push_reg sp
-	fetch
-	push_const 10
-	assign
-	fetch
-	shift_sp -1
-main_final:
+	assgin
+	jump c_final
+
+This variable's name is c
+/**** Speak To Me ****/
+Declclass is FUNC
+
+look the type decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is b
+/**** Speak To Me ****/
+Declclass is VAR
+
+look the type decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is a
+/**** Speak To Me ****/
+Declclass is VAR
+
+look the type decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is *return
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is test
+/**** Speak To Me ****/
+Declclass is FUNC
+
+look the returntype decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+look the formals
+
+This variable's name is *return
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is a
+/**** Speak To Me ****/
+Declclass is VAR
+
+look the type decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is b
+/**** Speak To Me ****/
+Declclass is VAR
+
+look the type decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is c
+/**** Speak To Me ****/
+Declclass is FUNC
+
+look the type decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is void
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is VOID
+
+
+This variable's name is char
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is CHAR
+
+
+This variable's name is int
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is c
+/**** Speak To Me ****/
+Declclass is FUNC
+
+look the type decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is c
+/**** Speak To Me ****/
+Declclass is FUNC
+
+look the type decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is c
+/**** Speak To Me ****/
+Declclass is FUNC
+
+look the type decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+test_final:
 	push_reg fp
 	pop_reg sp
 	pop_reg fp
 	pop_reg pc
-Lglob.data 10
+test_end:
+
+This variable's name is *return
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is test
+/**** Speak To Me ****/
+Declclass is FUNC
+
+look the returntype decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+look the formals
+
+This variable's name is *return
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is a
+/**** Speak To Me ****/
+Declclass is VAR
+
+look the type decl
+/**** Speak To Me ****/
+Declclass is TYPE
+Typeclass is INT
+
+
+This variable's name is b
+/**** Speak To Me ****/
+Declclas

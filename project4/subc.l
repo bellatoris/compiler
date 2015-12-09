@@ -64,12 +64,16 @@ Operators 	    [\(\)\[\]\{\}\-\,\!\+\/\%\=\&\|\;\*\.]
 	       return LOGICAL_AND;
         }
 "<"|"<="|">"|">=" {
-		   yylval.stringVal = yytext;
+		    char *relop = (char*)malloc(sizeof(char)*yyleng);
+		    strcpy(relop, yytext);
+		   yylval.stringVal = relop;
            return RELOP;
         }   
 
 "=="|"!=" {
-		   yylval.stringVal = yytext;
+		    char *equop = (char*)malloc(sizeof(char)*yyleng);
+		    strcpy(equop, yytext);
+		   yylval.stringVal = equop;
            return EQUOP;
         }
 

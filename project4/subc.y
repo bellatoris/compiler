@@ -18,8 +18,9 @@ void    REDUCE(char* s);
 	struct decl *declptr;
 	struct ste  *steptr;
 }
-%type<declptr>	    ext_def type_specifier struct_specifier func_decl pointers param_list param_decl  expr_e expr or_expr or_list and_expr and_list binary unary args const_expr
-%type<intVal>	    def def_list local_defs
+%type<declptr>	    ext_def type_specifier struct_specifier func_decl pointers expr_e expr or_expr or_list and_expr and_list binary unary args const_expr
+%type<intVal>	    def def_list local_defs param_decl param_list
+%type<intVal>	    LABEL BRANCH
 %nonassoc<idptr>    ID TYPE VOID
 /* Precedences and Associativities */
 
@@ -50,8 +51,8 @@ void    REDUCE(char* s);
 %token              CONTINUE
 %token              LOGICAL_OR
 %token              LOGICAL_AND
-%token              RELOP
-%token              EQUOP
+%token<stringVal>   RELOP
+%token<stringVal>   EQUOP
 %token              INCOP
 %token		    DECOP
 %token		    READ_INT
@@ -114,6 +115,7 @@ ext_def
 		    Write_Command("pop_reg fp");
 		    Write_Command("pop_reg pc");
 		    sprintf(command,"%s_end",func_name->name); 
+		    Write_Label(command);
 		}
 ;
 
@@ -209,6 +211,7 @@ func_decl
 		    {
 			$$ = procdecl;
 			declare($3, $$);
+			$$->size = 0;
 		    }
 		    //int type은 한번 선언된적이 있는 function이 인지 확인 해준다.
 		    else if(isdecl == inttype)
@@ -253,6 +256,7 @@ func_decl
 		    {
 			$$ = procdecl;
 			declare($3, $$);
+			$$->size = 0;
 		    }
 		    else if(isdecl == inttype)
 		    {
@@ -300,6 +304,7 @@ func_decl
 			$$ = procdecl;
 			procdecl->elementvar = NULL;
 			declare($3, $$);
+			$$->size = $6;
 		    }
 		    else if(procdecl->elementvar == inttype && $6)
 		    {
@@ -318,9 +323,7 @@ func_decl
 			procdecl->returntype = NULL;
 			//free(procdecl);
 			//free_ste_list(formals);
-		    }
-		    //push_scope(); /* for installing formals & locals in this scope */
-		    //pushstelist(formals); 
+		    } 
 		    else
 		    {
 			procdecl->formals = NULL;
@@ -350,34 +353,36 @@ param_list  /* list of formal parameter declaration */
 		    if($1)
 			$$ = $1;
 		    else
-			$$ = NULL;
+			$$ = 0;
 		}
 		| param_list ',' param_decl {
 		    if($1 && $3)
-			$$ = $1;
+			$$ = $1 + $3;
 		    else
-			$$ = NULL;
+			$$ = 0;
 		}
 ;
 param_decl  /* formal parameter declaration */
 		: type_specifier pointers ID {
 		    if($1 && !check_is_declared_for_else($3))
 		    {
-			struct decl *temp = declare($3, $$ = makevardecl($2? $2:$1))->decl;
+			struct decl *temp = declare($3, makevardecl($2? $2:$1))->decl;
+			$$ = temp->size;
 		    }
 		    else
 		    {
-			$$ = NULL;
+			$$ = 0;
 		    }
 		}
 		| type_specifier pointers ID '[' const_expr ']' {
 		    if($1 && $5 && !check_is_declared_for_else($3))
 		    {
-			struct decl *temp = declare($3, $$ = makeconstdecl(makearraydecl($5->intvalue, makevardecl($2? $2:$1))))->decl;
+			struct decl *temp = declare($3, makeconstdecl(makearraydecl($5->intvalue, makevardecl($2? $2:$1))))->decl;
+			$$ = temp->size;
 		    }
 		    else
 		    {
-			$$ = NULL;
+			$$ = 0;
 		    }
 		}
 ;
@@ -469,20 +474,50 @@ stmt_list
 ;
 stmt
 		: expr ';' {
+		    Write_Command("shift_sp -1");
 		}
 		| compound_stmt {
 		}
 		| RETURN ';' {
 		   if(!check_compatible(finddecl(returnid), voidtype))
 			yyerror("return value is not return type");
+		   else
+		   {
+			struct id *func_name = find_func_closest()->name;
+			char command[100];
+			sprintf(command, "jump %s_final", func_name->name);
+			Write_Command(command);
+		   }
 		}
-		| RETURN expr ';' {
-		    if($2 && !check_compatible(finddecl(returnid), $2->type))
+		| RETURN {
+		    char command[100];
+		    Write_Command("push_reg fp");
+		    Write_Command("push_const -1");
+		    Write_Command("add");
+		    sprintf(command, "push_const -%d", finddecl(returnid)->size);
+		    Write_Command(command);
+		    Write_Command("add");		    
+		} expr ';'{
+		    if(!check_compatible(finddecl(returnid), $3->type))
 			yyerror("return value is not return type");
+		    else
+		    {
+			struct id *func_name = find_func_closest()->name;
+			char command[100];
+			if($3->fetch)
+			    Write_Command("fetch");
+			Write_Command("assgin");
+			sprintf(command, "jump %s_final", func_name->name);
+			Write_Command(command);
+		    }
 		}
 		| ';' 
-		| IF '(' expr ')' stmt %prec ELSE
-		| IF '(' expr ')' stmt ELSE stmt %prec ELSE 
+		| IF LABEL '(' expr ')' BRANCH stmt LABEL %prec ELSE 
+		| IF LABEL '(' expr ')' BRANCH stmt ELSE {
+		    char command[100];
+		    sprintf(command, "jump label_%d", label_no + 1);
+		    Write_Command(command);
+		} LABEL stmt LABEL %prec ELSE
 		| WHILE '(' expr ')' stmt 
 		| FOR '(' expr_e ';' expr_e ';' expr_e ')' stmt 
 		| BREAK ';'
@@ -494,6 +529,8 @@ stmt
 
 		}
 		| WRITE_INT '(' expr ')' {
+		    if($3->fetch)
+			Write_Command("fetch");
 		    Write_Command("write_int");
 		}
 		| WRITE_CHAR '(' expr ')' {
@@ -505,8 +542,23 @@ stmt
 		    Write_Command("write_string");
 		}
 ;
+LABEL		:{
+		    char command[100];
+		    sprintf(command, "label_%d", label_no++);      
+		    Write_Label(command);
+		}
+;
+BRANCH		:{
+		    if($<declptr>-1->fetch)
+			Write_Command("fetch");
+		    char command[100];
+		    sprintf(command, "branch_false label_%d", label_no);
+		    Write_Command(command);
+		}
+;
 expr_e
-		: expr
+		: expr {
+		}
 		|/* empty */ {
 		}
 ;
@@ -538,6 +590,18 @@ expr
 		: unary {
 		    Write_Command("push_reg sp");
 		    Write_Command("fetch");
+		    if($1->type->typeclass == Hash("struct"))
+		    {
+			int size = $1->size;
+			char command[100];
+			while(size > 1)
+			{
+			    Write_Command("push_reg fp");
+			    sprintf(command, "push_const %d", $1->offset + $1->size - (--size));
+			    Write_Command(command);
+			    Write_Command("add");
+			}
+		    }
 		    //struct assign은 길게 늘어뜨리면 될것이다. while문을 쓰면 될듯
 		}'=' expr {
 		    if(!$1 || !$4)
@@ -552,13 +616,27 @@ expr
 			    $1->intvalue = $4->intvalue;
 			    $1->charvalue = $4->charvalue;
 			    $1->stringvalue = $4->stringvalue;
+			    if($1->type->typeclass == Hash("struct"))
+			    {
+				int size = $1->size;
+				char command[100];
+				while(size > 1)
+				{
+				    Write_Command("push_reg fp");
+				    sprintf(command, "push_const %d", $4->offset + --size);
+				    Write_Command(command);
+				    Write_Command("add");
+				    Write_Command("fetch");
+				    Write_Command("assign");
+				}
+			    }
 			    if($4->fetch)
 			    {
 				Write_Command("fetch");
 			    }
 			    Write_Command("assign");
 			    Write_Command("fetch");
-			    Write_Command("shift_sp -1");
+			    $$->fetch = 0;
 			}
 			else
 			{
@@ -586,6 +664,9 @@ or_list
 		    else if(check_compatible_type($1->type, inttype) && check_compatible_type($3->type, inttype))
 		    {
 			$$ = $1;
+			if($3->fetch)
+			    Write_Command("fetch");
+			$$->fetch = 0;
 		    }
 		    else
 		    {
@@ -599,14 +680,20 @@ and_expr
 		: and_list
 ;
 and_list
-		: and_list LOGICAL_AND binary {
-		    if(!$1 || !$3)
+		: and_list LOGICAL_AND{
+		    if($1->fetch)
+			Write_Command("fetch");
+		} binary {
+		    if(!$1 || !$4)
 		    {
 			$$ = NULL;
 		    }
-		    if(check_compatible_type($1->type, inttype) && check_compatible_type($3->type, inttype))
+		    else if(check_compatible_type($1->type, inttype) && check_compatible_type($4->type, inttype))
 		    {
 			$$ = $1;
+			if($4->fetch)
+			    Write_Command("fetch");
+			$$->fetch = 0;
 		    }
 		    else
 		    {
@@ -617,42 +704,85 @@ and_list
 		| binary
 ;
 binary
-		: binary RELOP binary {
-		    if(!$1 || !$3)
+		: binary RELOP {
+		    if($1->fetch)
+			Write_Command("fetch");
+		} binary {
+		    if(!$1 || !$4)
 		    {
 			$$ = NULL;
 		    }
-		    else if(reloptype($1->type, $3->type))
+		    else if(reloptype($1->type, $4->type))
 		    {
 			$$ = makeconstdecl(inttype);
+			if($4->fetch)
+			    Write_Command("fetch");
+			$$->fetch = 0;
+			if(!strcmp($2, ">="))
+			{
+			    Write_Command("greater_equal");
+			}
+			else if(!strcmp($2, ">"))
+			{
+			    Write_Command("greater");
+			}
+			else if(!strcmp($2, "<"))
+			{
+			    Write_Command("less");
+			}
+			else
+			{
+			    Write_Command("less_equal");
+			}
 		    }
 		    else
 		    {
 			$$ = NULL;
 		    }
 		}
-		| binary EQUOP binary {
-		    if(!$1 || !$3)
+		| binary EQUOP{
+		    if($1->fetch)
+			Write_Command("fetch");
+		} binary {
+		    if(!$1 || !$4)
 		    {
 			$$ = NULL;
 		    }
-		    else if(equoptype($1->type, $3->type))
+		    else if(equoptype($1->type, $4->type))
 		    {
 			$$ = makeconstdecl(inttype);
+			if($4->fetch)
+			    Write_Command("fetch");
+			$$->fetch = 0;
+			if(!strcmp($2, "=="))
+			{
+			    Write_Command("equal");
+			}
+			else
+			{
+			    Write_Command("not equal");
+			}
 		    }
 		    else
 		    {
 			$$ = NULL;
 		    }
 		}
-		| binary '+' binary {
-		    if(!$1 || !$3)
+		| binary '+'{
+		    if($1->fetch)
+			Write_Command("fetch");
+		} binary {
+		    if(!$1 || !$4)
 		    {
 			$$ = NULL;
 		    }
-		    else if(plustype($1->type, $3->type))
+		    else if(plustype($1->type, $4->type))
 		    {
 			$$ = $1;
+			if($4->fetch)
+			    Write_Command("fetch");
+			$$->fetch = 0;
+			Write_Command("add");
 		    }
 		    else
 		    {
@@ -660,7 +790,8 @@ binary
 		    }
 		}
 		| binary '-'{
-		    Write_Command("fetch");
+		    if($1->fetch)
+			Write_Command("fetch");
 		} binary {
 		    if(!$1 || !$4)
 		    {
@@ -669,6 +800,8 @@ binary
 		    else if(minustype($1->type, $4->type))
 		    {
 			$$ = $1;
+			if($4->fetch)
+			    Write_Command("fetch");
 			$$->fetch = 0;
 			Write_Command("sub");
 		    }
@@ -725,12 +858,14 @@ unary
 		    if(finddecl($1))
 		    {
 			$$ = finddecl($1);
-			if($$->scope == Global_Scope)
+			if($$->declclass == Hash("FUNC"))
+			{
+			}
+			else if($$->scope == Global_Scope)
 			{
 			    char command[100];
 			    sprintf(command, "push_const Lglob+%d", $$->offset);
 			    Write_Command(command);
-			    Write_Command("add");
 			    $$->fetch = 1;
 			}
 			else
@@ -754,7 +889,8 @@ unary
 		    if($2 && check_compatible_type($2->type, inttype))
 		    {
 			$$ = $2;
-			Write_Command("fetch");
+			if($2->fetch)
+			    Write_Command("fetch");
 			Write_Command("negate");
 		    }
 		    else
@@ -767,7 +903,8 @@ unary
 		    if($2 && check_compatible_type($2->type, inttype))
 		    {
 			$$ = $2;
-			Write_Command("fetch");
+			if($2->fetch)
+			    Write_Command("fetch");
 			Write_Command("not");
 		    }
 		    else
@@ -903,6 +1040,7 @@ unary
 			if(temp = deep_copy_pointer($2->type))
 			{
 			    $$ = makeconstdecl(temp);
+			    $$->fetch = 0;
 			}
 			else
 			    $$ = NULL;
@@ -924,6 +1062,7 @@ unary
 			    $$ = temp;
 			    if($2->fetch)
 				Write_Command("fetch");
+			    $$->fetch = 1;
 			}
 			else
 			    $$ = NULL;
@@ -944,6 +1083,7 @@ unary
 		    else if(check_is_const_type($1))
 		    {
 			$$ = arrayaccess($1, $3->type);
+			$$->fetch = 1;
 			char command[100];
 			sprintf(command, "push_const %d", $1->type->elementvar->size);
 			if($3->fetch)
@@ -963,6 +1103,7 @@ unary
 		    if(check_is_var_type($1))
 		    {
 			$$ = structaccess($1, $3);
+			$$->fetch = 1;
 			char command[100];
 			sprintf(command, "push_const %d", $$->offset);
 			Write_Command(command);
@@ -979,6 +1120,7 @@ unary
 		    if(check_is_var_type($1))
 		    {
 			$$ = structPtraccess($1, $3);
+			$$->fetch = 1;
 			char command[100];
 			sprintf(command, "push_const %d", $$->offset);
 			Write_Command(command);
@@ -991,21 +1133,40 @@ unary
 			$$ = NULL;
 		    }
 		}
-		| unary '(' args ')'{
-		    if(!$1 || !$3)
+		| unary '(' {
+		   char command[100];
+		   sprintf(command, "shift_sp %d", find_func($1)->decl->formals->decl->size);
+		   Write_Command(command);
+		   sprintf(command, "push_const label_%d", label_no);
+		   Write_Command(command);
+		   Write_Command("push_reg fp");
+		} args ')'{
+		    if(!$1 || !$4)
 		    {
 			$$ = NULL;
 		    }
 		    else if(check_is_proc($1))
 		    {
-			$$ = check_function_call($1, $3);
+			$$ = check_function_call($1, $4);
+			struct id *func_name = find_func($1)->name;
+			$$->fetch = 0;
+			char command[100];
+			Write_Command("push_reg sp");
+			sprintf(command, "push_const -%d", $1->size);
+			Write_Command(command);
+			Write_Command("add");
+			Write_Command("pop_reg fp");
+			sprintf(command, "jump %s", func_name->name);
+			Write_Command(command);
+			sprintf(command, "label_%d", label_no++);
+			Write_Label(command);
 		    }
 		    else
 		    {	
 			$$ = NULL;
 		    }
 		    
-		    if($3)
+		    /*if($3)
 		    {
 			struct decl *temp = $3;
 			while(temp)
@@ -1013,12 +1174,29 @@ unary
 			    free(temp);
 			    temp = temp->next;
 			}
-		    }	
+			}*/
 		}
 		| unary '(' ')' {
 		    if($1 && check_is_proc($1))
 		    {
 			$$ = check_function_call($1, NULL);
+			struct id *func_name = find_func($1)->name;
+			$$->fetch = 0;
+			char command[100];
+			sprintf(command, "shift_sp %d", find_func($1)->decl->formals->decl->size);
+			Write_Command(command);
+			sprintf(command, "push_const label_%d", label_no);
+			Write_Command(command);
+			Write_Command("push_reg fp");
+			Write_Command("push_reg sp");
+			sprintf(command, "push_const -%d", $1->size);
+			Write_Command(command);
+			Write_Command("add");
+			Write_Command("pop_reg fp");
+			sprintf(command, "jump %s", func_name->name);
+			Write_Command(command);
+			sprintf(command, "label_%d", label_no);
+			Write_Label(command);
 		    }
 		    else
 		    {
@@ -1027,22 +1205,55 @@ unary
 		}
 ;
 args    /* actual parameters(function arguments) transferred to function */
-		: expr {
-		    if($1)
+		: args ',' expr {
+		    if($1 && $3)
 		    {
-			$$ = makevardecl($1->type);
-			$$->next = NULL;
+			$$ = $1;
+			struct decl *temp = $$;
+			while(temp->next)
+			{
+			    temp = temp->next;
+			}
+			temp->next = makevardecl($3->type);
+			temp->next->next = NULL;
+			$$->fetch = 1;
+			if($3->fetch)
+			    Write_Command("fetch");
+
+			int size = $3->size;
+			while(size > 1)
+			{
+			    Write_Command("push_reg fp");
+			    char command[100];
+			    sprintf(command, "push_const %d", $3->offset +$3->size -(--size));
+			    Write_Command(command);
+			    Write_Command("add");
+			    Write_Command("fetch");
+			}
 		    }
 		    else
 		    {
 			$$ = NULL;
 		    }
 		}
-		| expr ',' args {
-		    if($1 && $3)
+		| expr {
+		    if($1)
 		    {
 			$$ = makevardecl($1->type);
-			$$->next = $3;
+			$$->next = NULL;
+			$$->fetch = 1;
+			if($1->fetch)
+			    Write_Command("fetch");
+			int size = $1->size;
+			while(size > 1)
+			{
+			    Write_Command("push_reg fp");
+			    char command[100];
+			    sprintf(command, "push_const %d", $1->offset + $1->size-(--size));
+			    Write_Command(command);
+			    Write_Command("add");
+			    Write_Command("fetch");
+			}
 		    }
 		    else
 		    {
@@ -1118,9 +1329,18 @@ struct ste *find_func(struct decl *declptr)
     return NULL;
 }
 
-int new_label()
+struct ste *find_func_closest()
 {
-    return label_no++;
+    struct ste *temp = SStack.TOP->top;
+    while(temp)
+    {
+	if(temp->decl->declclass == Hash("FUNC"))
+	{
+	    return temp;
+	}
+	temp = temp->prev;
+    }
+    return NULL;
 }
 
 
@@ -1279,7 +1499,7 @@ struct decl *deep_copy_variable(struct decl *declptr)
 }
 
 
-struct ste *push_ste_list(struct ste *formals)	//완벽한 deep copy를 해준다.
+struct ste *push_ste_list(struct ste *formals)	//완벽한 deep copy를 해준다. 안한다.
 {
     struct ste *ftemp = formals;
     while(ftemp)
@@ -1324,24 +1544,25 @@ struct ste *push_ste_list(struct ste *formals)	//완벽한 deep copy를 해준�
 struct ste *pop_scope()		/* 현재 SStack.TOP->prev가 가르키는 ste까지 내려간다. */
 {
     struct ste *temp = SStack.TOP->top;
-    struct ste *temp3 = SStack.TOP->prev->top;
+    struct ste *temp2 = NULL;
     struct ste *Head = NULL;
 
-    if(temp == temp3)	/* push_scope()하고 아무것도 추가하지 않은 경우 */
+    if(temp == SStack.TOP->prev->top)/* push_scope()하고 아무것도 추가하지 않은 경우 */
     {
 	//free(SStack.TOP);
 	SStack.TOP = SStack.TOP->prev;
 	return NULL;
     }
 
-    while(temp != temp3)
+    while(temp != SStack.TOP->prev->top)
     {
-	struct ste *headtemp = Head;
-	struct ste *stacktemp = temp->prev;
-	Head = temp;
-	Head->prev = headtemp;
-	temp = stacktemp;
+	Head = temp->prev;
+	temp->prev = temp2;
+	temp2 = temp;
+	temp = Head;
     }
+    temp = NULL;
+    Head = NULL;
     /*
     struct ste *garbage_temp = SStack.TOP->garbage_top;
     struct ste *garbage_temp3 = SStack.TOP->prev->garbage_top;
@@ -1351,11 +1572,10 @@ struct ste *pop_scope()		/* 현재 SStack.TOP->prev가 가르키는 ste까지 �
 	garbage_temp = garbage_temp->prev;
     }
     
-    free(SStack.TOP);
-    */
+    free(SStack.TOP);*/
     SStack.TOP = SStack.TOP->prev;      /* SStack.TOP의 scope를 한단계 낮춘다. */
 
-    return Head;
+    return temp2;
 }
 
 struct ste *free_scope()    //function이 끝나고 ste를 전부 free시키는 함수
@@ -2015,6 +2235,7 @@ struct decl *check_function_call(struct decl *procptr, struct decl *actuals)
 	    }
 	    else
 	    {
+		yyerror("1");
 		break;
 	    }
 	}
@@ -2027,11 +2248,13 @@ struct decl *check_function_call(struct decl *procptr, struct decl *actuals)
 	    }
 	    else
 	    {
+		yyerror("2");
 		break;
 	    }
 	}
 	else
 	{
+	    yyerror("3");
 	    break;
 	}
     }

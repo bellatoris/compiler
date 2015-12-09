@@ -162,8 +162,8 @@ void Write_Else(char* command);
 
 int  get_field_size(struct ste *steptr);
 struct ste *find_func(struct decl *delcptr);
+struct ste *find_func_closest();
 int in_func;
-int new_label();
 int label_no;
 int string_no;
 
