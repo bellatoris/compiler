@@ -400,6 +400,7 @@ def
 		    {
 			struct decl *temp = declare($3, makevardecl($2? $2:$1))->decl;
 			$$ = temp->size;
+			printf("%d\n",$$);
 		    }
 		    else
 		    {
@@ -598,6 +599,18 @@ expr
 		: unary {
 		    Write_Command("push_reg sp");
 		    Write_Command("fetch");
+		    if($1->type->typeclass == Hash("struct"))
+		    {
+			int size = $1->size;
+			char command[100];
+			while(size > 1)
+			{
+			    Write_Command("push_reg fp");
+			    sprintf(command, "push_const %d", $1->offset + $1->size - (--size));
+			    Write_Command(command);
+			    Write_Command("add");
+			}
+		    }
 		    //struct assign은 길게 늘어뜨리면 될것이다. while문을 쓰면 될듯
 		}'=' expr {
 		    if(!$1 || !$4)
@@ -612,6 +625,20 @@ expr
 			    $1->intvalue = $4->intvalue;
 			    $1->charvalue = $4->charvalue;
 			    $1->stringvalue = $4->stringvalue;
+			    if($1->type->typeclass == Hash("struct"))
+			    {
+				int size = $1->size;
+				char command[100];
+				while(size > 1)
+				{
+				    Write_Command("push_reg fp");
+				    sprintf(command, "push_const %d", $4->offset + --size);
+				    Write_Command(command);
+				    Write_Command("add");
+				    Write_Command("fetch");
+				    Write_Command("assign");
+				}
+			    }
 			    if($4->fetch)
 			    {
 				Write_Command("fetch");
@@ -619,25 +646,6 @@ expr
 			    Write_Command("assign");
 			    Write_Command("fetch");
 			    $$->fetch = 0;
-
-			    if($1->type->typeclass == Hash("struct"))
-			    {
-				int size = $1->size;
-				char command[100];
-				while(size > 1)
-				{
-				    //global 일 때도 해결해야함
-				    Write_Command("push_reg fp");
-				    sprintf(command, "push_const %d", $1->offset + $1->size - (--size));
-				    Write_Command(command);
-				    Write_Command("add");
-				    Write_Command("push_reg fp");
-				    sprintf(command, "push_const %d", $4->offset + $1->size - (size));
-				    Write_Command(command);
-				    Write_Command("fetch");
-				    Write_Command("assign");
-				}
-			    }
 			}
 			else
 			{
