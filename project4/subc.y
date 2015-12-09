@@ -526,9 +526,33 @@ stmt
 		    sprintf(command, "jump label_%d", label_no + 1);
 		    Write_Command(command);
 		} LABEL stmt LABEL %prec ELSE
-		| WHILE '(' expr ')' stmt 
-		| FOR '(' expr_e ';' expr_e ';' expr_e ')' stmt 
-		| BREAK ';'
+		| WHILE LABEL '(' expr ')'BRANCH stmt {
+		    char command[100];
+		    sprintf(command, "jump label_%d", label_no - 1);
+		    Write_Command(command);
+		} LABEL
+		| FOR '(' expr_e ';' LABEL expr_e ';' {
+		    char command[100];
+		    if($6->fetch)
+			Write_Command("fetch");
+		    sprintf(command, "branch_false label_%d", label_no + 2);
+		    Write_Command(command);
+		    sprintf(command, "jump label_%d", label_no + 1);
+		    Write_Command(command);
+		} LABEL  expr_e {
+		    char command[100];
+		    sprintf(command, "jump label_%d", label_no - 2);
+		    Write_Command(command);
+		} ')' LABEL  stmt {
+		    char command[100];
+		    sprintf(command, "jump label_%d", label_no - 2);
+		    Write_Command(command);
+		} LABEL
+		| BREAK ';'{
+		    char command[100];
+		    sprintf(command, "jump label_%d", label_no + 1);
+		    Write_Command(command);
+		}	
 		| CONTINUE ';'
 		| READ_INT '(' expr ')' {
 
@@ -634,6 +658,7 @@ expr
 				    Write_Command("push_reg fp");
 				    sprintf(command, "push_const %d", $4->offset + $1->size - (size));
 				    Write_Command(command);
+				    Write_Command("add");
 				    Write_Command("fetch");
 				    Write_Command("assign");
 				}
@@ -667,6 +692,7 @@ or_list
 			$$ = $1;
 			if($3->fetch)
 			    Write_Command("fetch");
+			Write_Command("or");
 			$$->fetch = 0;
 		    }
 		    else
@@ -694,6 +720,7 @@ and_list
 			$$ = $1;
 			if($4->fetch)
 			    Write_Command("fetch");
+			Write_Command("and");
 			$$->fetch = 0;
 		    }
 		    else
@@ -1123,6 +1150,7 @@ unary
 			$$ = structPtraccess($1, $3);
 			$$->fetch = 1;
 			char command[100];
+			Write_Command("fetch");
 			sprintf(command, "push_const %d", $$->offset);
 			Write_Command(command);
 			Write_Command("add");
@@ -2266,7 +2294,7 @@ struct decl *check_function_call(struct decl *procptr, struct decl *actuals)
     }
 
 //    return deep_copy(procptr->returntype);  /* for decl of the call */
-    return makeconstdecl(procptr->returntype);
+    return makevardecl(procptr->returntype);
 }
 
 struct decl *check_function_declare(struct decl *procptr, struct decl *procptr2)

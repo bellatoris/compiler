@@ -166,6 +166,8 @@ struct ste *find_func_closest();
 int in_func;
 int label_no;
 int string_no;
+int loop_out_no;
+int loop_continue_no;
 
 #endif
 
