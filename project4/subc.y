@@ -151,6 +151,7 @@ type_specifier
 
 struct_specifier
 		: STRUCT ID '{'{
+		    in_struct++;
 		    $<declptr>$ = check_is_declared_for_struct($2);
 		    push_scope();
 		}		    
@@ -171,6 +172,7 @@ struct_specifier
 			//free_ste_list(fields);
 			$$ = NULL;
 		    }
+		    in_struct--;
 		}
 		| STRUCT ID {
 		    struct decl *declptr = findstructdecl($2);
@@ -514,46 +516,92 @@ stmt
 			char command[100];
 			if($3->fetch)
 			    Write_Command("fetch");
-			Write_Command("assgin");
+			Write_Command("assign");
 			sprintf(command, "jump %s_final", func_name->name);
 			Write_Command(command);
 		    }
 		}
 		| ';' 
-		| IF LABEL '(' expr ')' BRANCH stmt LABEL %prec ELSE 
-		| IF LABEL '(' expr ')' BRANCH stmt ELSE {
+		| IF LABEL '(' expr ')' BRANCH stmt {
 		    char command[100];
-		    sprintf(command, "jump label_%d", label_no + 1);
-		    Write_Command(command);
-		} LABEL stmt LABEL %prec ELSE
-		| WHILE LABEL '(' expr ')'BRANCH stmt {
+		    sprintf(command, "if_label_no_%d", $6 - 1);
+		    Write_Label(command);
+		}%prec ELSE 
+		| IF LABEL '(' expr ')' BRANCH stmt ELSE  {
 		    char command[100];
-		    sprintf(command, "jump label_%d", label_no - 1);
+		    sprintf(command, "jump if_label_%d", $6);
 		    Write_Command(command);
-		} LABEL
-		| FOR '(' expr_e ';' LABEL expr_e ';' {
+		    sprintf(command, "if_label_%d", $6 - 1);
+		    Write_Label(command);
+		} stmt {
+		    char command[100];
+		    sprintf(command, "if_label_%d", $6);
+		    Write_Label(command);
+		}%prec ELSE
+		| WHILE {
+		    char command[100];
+		    sprintf(command, "loop_continue_%d", loop_continue_no++);
+		    Write_Label(command);
+		    $<intVal>$ = loop_continue_no;
+		} '(' expr ')'{
+		    if($<declptr>4->fetch)
+			Write_Command("fetch");
+                    char command[100];
+                    sprintf(command, "branch_false loop_out_%d", loop_out_no++);
+                    Write_Command(command);
+		    $<intVal>$ = loop_out_no;
+		} stmt {
+		    char command[100];
+		    sprintf(command, "jump loop_continue_%d", $<intVal>2 - 1);
+		    Write_Command(command);
+		    sprintf(command, "loop_out_%d", $<intVal>6 - 1);
+		    Write_Label(command);
+		} 
+		| FOR '(' expr_e ';' {
+		    char command[100]; 
+		    sprintf(command, "loop_continue_%d", loop_continue_no++);
+		    Write_Label(command);
+		    $<intVal>$ = loop_continue_no;
+		} expr_e ';' {
 		    char command[100];
 		    if($6->fetch)
 			Write_Command("fetch");
-		    sprintf(command, "branch_false label_%d", label_no + 2);
+		    sprintf(command, "branch_false loop_out_%d", loop_out_no++);
 		    Write_Command(command);
-		    sprintf(command, "jump label_%d", label_no + 1);
-		    Write_Command(command);
-		} LABEL  expr_e {
+		    $<intVal>$ = loop_out_no;
+		}
+		{
 		    char command[100];
-		    sprintf(command, "jump label_%d", label_no - 2);
+		    sprintf(command, "jump loop_continue_%d", loop_continue_no++);
 		    Write_Command(command);
-		} ')' LABEL  stmt {
+		    sprintf(command, "loop_continue_%d", loop_continue_no++);
+		    Write_Label(command);
+		    $<intVal>$ = loop_continue_no;
+		} expr_e {
 		    char command[100];
-		    sprintf(command, "jump label_%d", label_no - 2);
+		    sprintf(command, "jump loop_continue_%d", $<intVal>5 - 1);
 		    Write_Command(command);
-		} LABEL
+		} ')' {
+		    char command[100];
+		    sprintf(command, "loop_continue_%d", $<intVal>9 - 2);
+		    Write_Label(command);
+		} stmt {
+		    char command[100];
+		    sprintf(command, "jump loop_continue_%d", $<intVal>9 - 1);
+		    Write_Command(command);
+		    sprintf(command, "loop_out_%d", $<intVal>8 - 1);
+		    Write_Label(command);
+		}
 		| BREAK ';'{
 		    char command[100];
-		    sprintf(command, "jump label_%d", label_no + 1);
+		    sprintf(command, "jump loop_out_%d", loop_out_no - 1);
 		    Write_Command(command);
 		}	
-		| CONTINUE ';'
+		| CONTINUE ';'{
+		    char command[100];
+		    sprintf(command, "jump loop_continue_%d", loop_continue_no - 1);
+		    Write_Command(command);
+		}
 		| READ_INT '(' expr ')' {
 
 		}
@@ -576,16 +624,18 @@ stmt
 ;
 LABEL		:{
 		    char command[100];
-		    sprintf(command, "label_%d", label_no++);      
+		    sprintf(command, "if_label_%d", if_label_no++);      
 		    Write_Label(command);
+		    $$ = if_label_no;
 		}
 ;
 BRANCH		:{
 		    if($<declptr>-1->fetch)
 			Write_Command("fetch");
 		    char command[100];
-		    sprintf(command, "branch_false label_%d", label_no);
+		    sprintf(command, "branch_false if_label_%d", if_label_no++);
 		    Write_Command(command);
+		    $$ = if_label_no++;
 		}
 ;
 expr_e
@@ -636,7 +686,7 @@ expr
 			    $1->intvalue = $4->intvalue;
 			    $1->charvalue = $4->charvalue;
 			    $1->stringvalue = $4->stringvalue;
-			    if($4->fetch)
+			    if($4->fetch && $4->type->typeclass != Hash("array"))
 			    {
 				Write_Command("fetch");
 			    }
@@ -651,14 +701,32 @@ expr
 				while(size > 1)
 				{
 				    //global 일 때도 해결해야함
-				    Write_Command("push_reg fp");
-				    sprintf(command, "push_const %d", $1->offset + $1->size - (--size));
-				    Write_Command(command);
-				    Write_Command("add");
-				    Write_Command("push_reg fp");
-				    sprintf(command, "push_const %d", $4->offset + $1->size - (size));
-				    Write_Command(command);
-				    Write_Command("add");
+				    //struct of struct해결안됨
+				    //struct depth 와 in struct라는 변수를 하나 선언해서 사용하면 될듯
+				    if($1->scope == Global_Scope)
+				    {
+					sprintf(command, "push_const Lglob+%d", $1->offset + $1->size - (--size));
+					Write_Command(command);
+				    }
+				    else
+				    {
+					Write_Command("push_reg fp");
+					sprintf(command, "push_const %d", $1->offset + $1->size - (--size));
+					Write_Command(command);
+					Write_Command("add");
+				    }
+				    if($4->scope == Global_Scope)
+				    {
+					sprintf(command, "push_const Lglob+%d", $4->offset + $1->size - (size));
+					Write_Command(command);
+				    }
+				    else
+				    {
+					Write_Command("push_reg fp");		    
+					sprintf(command, "push_const %d", $4->offset + $1->size - (size));
+					Write_Command(command);
+					Write_Command("add");
+				    }
 				    Write_Command("fetch");
 				    Write_Command("assign");
 				}
@@ -1103,18 +1171,37 @@ unary
 			$$ = NULL;
 		    }
 		}
-		| unary '[' expr ']' {
-		    if(!$1 || !$3)
+		| unary {
+		    if($1->type->typeclass == Hash("ptr"))
+		    {
+			Write_Command("fetch");
+		    }
+		} '[' expr ']' {
+		    if(!$1 || !$4)
 		    {
 			$$ = NULL;
 		    }
+		    else if($1->type->typeclass == Hash("ptr"))
+		    {
+			$$ = makevardecl($1->type->ptrto);
+			$$->fetch = 1;
+			char command[100];
+			sprintf(command, "push_const %d", $1->type->ptrto->size);
+			if($4->fetch)
+			{
+			    Write_Command("fetch");
+			}
+			Write_Command(command);
+			Write_Command("mul");
+			Write_Command("add");
+		    }
 		    else if(check_is_const_type($1))
 		    {
-			$$ = arrayaccess($1, $3->type);
+			$$ = arrayaccess($1, $4->type);
 			$$->fetch = 1;
 			char command[100];
 			sprintf(command, "push_const %d", $1->type->elementvar->size);
-			if($3->fetch)
+			if($4->fetch)
 			{
 			    Write_Command("fetch");
 			}
@@ -1224,7 +1311,7 @@ unary
 			Write_Command("pop_reg fp");
 			sprintf(command, "jump %s", func_name->name);
 			Write_Command(command);
-			sprintf(command, "label_%d", label_no);
+			sprintf(command, "label_%d", label_no++);
 			Write_Label(command);
 		    }
 		    else
@@ -1411,8 +1498,12 @@ void init_type()
     declare(enter(VOID, "void", 4), voidtype)->decl->size = 1;
     returnid = enter(ID, "*return", 7);
     in_func = 0;
+    in_struct = 0;
     label_no = 0;
     string_no = 0;
+    loop_out_no = 0;
+    loop_continue_no = 0;
+    if_label_no = 0;
 
     Write_Command("shift_sp 1");
     Write_Command("push_const EXIT");

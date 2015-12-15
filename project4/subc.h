@@ -81,6 +81,7 @@ struct decl{
     int		    fetch;
     int		    offset;
     int		    argument;
+    int		    str_offset;
     struct ScopeNode *scope;   /* scope: when VAR declared	    */
 }decl;				/* Or parameter check of function call	*/
 /* For hash table */
@@ -164,10 +165,12 @@ int  get_field_size(struct ste *steptr);
 struct ste *find_func(struct decl *delcptr);
 struct ste *find_func_closest();
 int in_func;
+int in_struct;
 int label_no;
 int string_no;
 int loop_out_no;
 int loop_continue_no;
+int if_label_no;
 
 #endif
 

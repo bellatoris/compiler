@@ -57,7 +57,6 @@ int main(){
     zzz.aa = make_default_a3();
     zzz.bb = make_default_a6();
     zzz.cc = make_default_a3();
-	zzz.aa.a = 3;
     
     write_int(zzz.aa.a); write_string("\n");
     write_int(zzz.aa.b); write_string("\n");
