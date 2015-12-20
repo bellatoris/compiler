@@ -1,10 +1,15 @@
+struct str3{int a; int b;};
+
+struct str3 kk(){
+    struct str3 stt;
+    stt.a = 3;
+    stt.b = 4;
+    return stt;
+}
+
 int main()
 {
-    struct str{int a; int b; struct st2{int c; int d;}str2;}str1;
-    struct st2 kk;
-    kk.c = 3;
-    kk.d = 5;
-    str1.str2 = kk;
-    write_int(str1.str2.c);
-
+    struct str3 a;
+    a = kk();
+    write_int(a.a);
 }
